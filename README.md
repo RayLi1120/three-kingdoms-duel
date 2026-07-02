@@ -10,8 +10,13 @@ turns. UI mimics the Pokémon FireRed/LeafGreen battle screen.
 ## How to play
 - Pick a skill from the **技能 (FIGHT)** menu each turn; both sides resolve in speed order.
 - Slot 1 is free, slots 2–3 have cooldowns, slot 4 is an ultimate gated by the 戰意 gauge.
-- **Timed hits**: when you attack, a ring converges on the foe — click the screen
-  (or press Space/Enter/J) the instant it closes: 完美 ×1.3 dmg +戰意, 不錯 ×1.0, 失手 ×0.7.
+- **Timed hits** — every skill has its own input pattern (完美 ×1.3 dmg +戰意, 不錯 ×1.0, 失手 ×0.7):
+  - *Free skill*: a ring converges on the foe — click / press Space as it closes.
+  - *Combo skill*: a 3-key sequence (WASD/JK) appears — type it in order (or click the
+    key chips); fast & flawless = perfect, one wrong key = fail.
+  - *Heavy skill* (破甲/火攻): **hold** mouse or Space to charge, release the instant the
+    growing ring meets the target — overcharge and it fizzles.
+  - *Ultimate*: three rings chain at random spots around the foe — hit each one.
 - **Parry**: when the foe attacks, an orange ring converges on you — perfect timing
   takes **zero damage and counterattacks** (+戰意); good halves it; miss eats it all.
 - **架勢 Break**: clean hits build the foe's break gauge (sloppy defense builds yours);

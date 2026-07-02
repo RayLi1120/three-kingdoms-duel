@@ -109,23 +109,37 @@ async function hit(side, big) {
   sp.classList.remove("hit"); $("stage").classList.remove("shake");
 }
 
-// ---------- QTE (timed input) ----------
+// ---------- QTE (timed-input minigames) ----------
+// 每招式有自己的輸入模式：ring 光圈 / seq 連按 / hold 蓄力 / targets 連擊；敵襲一律 parry 光圈。
 const QTE_CFG = {
-  strike: { dur: 950, perfect: 85, good: 250, label: "看準時機——點擊或按空白鍵！" },
+  ring:   { dur: 950, perfect: 85, good: 250, label: "看準時機——光圈收合瞬間出手！" },
   parry:  { dur: 950, perfect: 95, good: 260, label: "敵襲——點擊或按空白鍵格擋！" },
+  target: { dur: 800, perfect: 85, good: 230, label: "" },       // 連擊的單發（訊息由 targetsQte 統一顯示）
+  seq:    { per: 1000, perfectFrac: 0.55 },
+  hold:   { armWait: 1500, dur: 1300, sweetAt: 910, perfect: 90, good: 250 },
 };
-function qte(kind, side) {
-  if (DUEL.forceQte) return Promise.resolve(DUEL.forceQte);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return Promise.resolve("good");
+const KEY_POOL = ["W", "A", "S", "D", "J", "K"];
+
+// common short-circuits: forced result (testing) / reduced-motion auto-good
+function qteGuard() {
+  if (DUEL.forceQte) return DUEL.forceQte;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return "good";
+  return null;
+}
+
+// 光圈：ring converges onto a target circle; press when they meet. opts.dx/dy offset in cqw.
+function ringQte(kind, side, opts = {}) {
+  const g = qteGuard(); if (g) return Promise.resolve(g);
   const cfg = QTE_CFG[kind];
   return new Promise(res => {
     const { cx, cy } = spriteCenter(side);
+    const x = cx + (opts.dx || 0), y = cy + (opts.dy || 0);
     const tgt = document.createElement("div"); tgt.className = "qte-target" + (kind === "parry" ? " parry" : "");
     const ring = document.createElement("div"); ring.className = "qte-ring" + (kind === "parry" ? " parry" : "");
-    for (const n of [tgt, ring]) { n.style.left = cx + "cqw"; n.style.top = cy + "cqw"; }
+    for (const n of [tgt, ring]) { n.style.left = x + "cqw"; n.style.top = y + "cqw"; }
     ring.style.animationDuration = cfg.dur + "ms";
     $("fxLayer").append(tgt, ring);
-    $("msg").textContent = cfg.label;
+    if (cfg.label) $("msg").textContent = cfg.label;
     const t0 = performance.now();
     let done = false;
     const finish = q => {
@@ -146,6 +160,115 @@ function qte(kind, side) {
     $("stage").addEventListener("pointerdown", onPress);
     document.addEventListener("keydown", onKey);
   });
+}
+
+// 連按：依序按出顯示的按鍵（或點擊字鍵）。按錯/逾時＝失手；全對且夠快＝完美。
+function seqQte() {
+  const g = qteGuard(); if (g) return Promise.resolve(g);
+  const cfg = QTE_CFG.seq;
+  const keys = Array.from({ length: 3 }, () => KEY_POOL[Math.floor(Math.random() * KEY_POOL.length)]);
+  return new Promise(res => {
+    const box = document.createElement("div"); box.className = "qte-seq";
+    const chips = keys.map(k => { const c = document.createElement("button"); c.className = "qte-key"; c.textContent = k; box.appendChild(c); return c; });
+    $("fxLayer").appendChild(box);
+    $("msg").textContent = "依序按下按鍵（或點擊字鍵）！";
+    let i = 0, stepTimer = null;
+    const t0 = performance.now();
+    const finish = q => {
+      clearTimeout(stepTimer);
+      document.removeEventListener("keydown", onKey);
+      setTimeout(() => box.remove(), 350);
+      res(q);
+    };
+    const advance = ok => {
+      chips[i].classList.remove("cur");
+      chips[i].classList.add(ok ? "ok" : "bad");
+      if (!ok) return finish("miss");
+      if (++i >= keys.length) {
+        const frac = (performance.now() - t0) / (cfg.per * keys.length);
+        return finish(frac <= cfg.perfectFrac ? "perfect" : "good");
+      }
+      arm();
+    };
+    const arm = () => {
+      chips[i].classList.add("cur");
+      clearTimeout(stepTimer);
+      stepTimer = setTimeout(() => { chips[i].classList.add("bad"); finish("miss"); }, cfg.per);
+    };
+    const onKey = e => {
+      if (e.repeat) return;
+      const k = (e.code || "").replace("Key", "");
+      if (!KEY_POOL.includes(k)) return;
+      e.preventDefault(); advance(k === keys[i]);
+    };
+    chips.forEach((c, idx) => c.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); advance(idx === i); }));
+    document.addEventListener("keydown", onKey);
+    arm();
+  });
+}
+
+// 蓄力：按住（滑鼠或空白鍵）光圈脹大，與目標圈重合瞬間放開；過度蓄力＝失手。
+function holdQte(side) {
+  const g = qteGuard(); if (g) return Promise.resolve(g);
+  const cfg = QTE_CFG.hold;
+  return new Promise(res => {
+    const { cx, cy } = spriteCenter(side);
+    const tgt = document.createElement("div"); tgt.className = "qte-target";
+    const ring = document.createElement("div"); ring.className = "qte-ring grow";
+    for (const n of [tgt, ring]) { n.style.left = cx + "cqw"; n.style.top = cy + "cqw"; }
+    $("fxLayer").append(tgt, ring);
+    $("msg").textContent = "按住蓄力——光圈重合瞬間放開！";
+    let pressT = 0, done = false, armT = null, overT = null;
+    const finish = q => {
+      if (done) return; done = true;
+      clearTimeout(armT); clearTimeout(overT);
+      $("stage").removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointerup", onUp);
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keyup", onKeyUp);
+      setTimeout(() => { tgt.remove(); ring.remove(); }, 140);
+      res(q);
+    };
+    const onDown = e => {
+      if (pressT) return;
+      e.preventDefault();
+      clearTimeout(armT); pressT = performance.now();
+      ring.style.animation = `qteGrow ${cfg.dur}ms linear forwards`;
+      overT = setTimeout(() => finish("miss"), cfg.dur + 40);   // 爆發過度
+    };
+    const onUp = () => {
+      if (!pressT) return;
+      const dt = Math.abs(performance.now() - pressT - cfg.sweetAt);
+      finish(dt <= cfg.perfect ? "perfect" : dt <= cfg.good ? "good" : "miss");
+    };
+    const onKeyDown = e => { if (e.repeat) return; if (e.code === "Space" || e.code === "Enter" || e.code === "KeyJ") onDown(e); };
+    const onKeyUp = e => { if (e.code === "Space" || e.code === "Enter" || e.code === "KeyJ") onUp(); };
+    armT = setTimeout(() => finish("miss"), cfg.armWait);       // 遲遲不按也算失手
+    $("stage").addEventListener("pointerdown", onDown);
+    window.addEventListener("pointerup", onUp);
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keyup", onKeyUp);
+  });
+}
+
+// 連擊：三發小光圈在敵方周圍隨機位置接連出現，逐一命中。2 發完美＝完美；全空＝失手。
+async function targetsQte(side) {
+  const g = qteGuard(); if (g) return g;
+  $("msg").textContent = "連續打擊——逐一命中光圈！";
+  let score = 0;
+  for (let n = 0; n < 3; n++) {
+    const q = await ringQte("target", side, { dx: Math.random() * 20 - 10, dy: Math.random() * 10 - 5 });
+    score += q === "perfect" ? 2 : q === "good" ? 1 : 0;
+    await wait(100);
+  }
+  return score >= 5 ? "perfect" : score >= 3 ? "good" : "miss";
+}
+
+// 我方出手的輸入模式：終結技＝連擊；冷卻重招＝蓄力（破甲/火攻）或連按；免費招＝光圈。
+function strikeQte(sk) {
+  if (sk.type === "ult") return targetsQte("foe");
+  if (sk.cd > 0) return (sk.fx === "pierce" || sk.fx === "burn") ? holdQte("foe") : seqQte();
+  return ringQte("ring", "foe");
 }
 
 const VERDICT_TXT = {
@@ -241,8 +364,9 @@ async function act(attSide, sk) {
     return;
   }
 
-  // ---- timed input：我方出手＝強化時機（光圈在敵方），敵方出手＝格擋時機（光圈在我方）----
-  const q = attSide === "ally" ? await qte("strike", "foe") : await qte("parry", "ally");
+  // ---- timed input：我方出手＝該招式的輸入模式，敵方出手＝格擋光圈（在我方）----
+  const q = attSide === "ally" ? await strikeQte(sk) : await ringQte("parry", "ally");
+  DUEL.lastQte = { side: attSide, sk: sk.name, q };
   verdict(defSide, attSide === "ally" ? "strike" : "parry", q);
 
   await lunge(attSide);

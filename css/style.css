@@ -216,6 +216,30 @@ body {
   text-shadow: 0 0.4cqw 0 rgba(0,0,0,.45); animation: floatUp 1s ease-out forwards;
 }
 
+/* 蓄力 hold-&-release: ring grows from inside the target; release when they coincide */
+.qte-ring.grow { transform: translate(-50%,-50%) scale(.3); opacity: .9; animation: none; }
+@keyframes qteGrow {
+  from { transform: translate(-50%,-50%) scale(.3); opacity: .9; }
+  to   { transform: translate(-50%,-50%) scale(1.3); opacity: 1; }
+}
+
+/* 連按 key-sequence chips (clickable, so re-enable pointer events inside the fx layer) */
+.qte-seq {
+  position: absolute; left: 50cqw; top: 36cqw; transform: translateX(-50%);
+  display: flex; gap: 1.8cqw; pointer-events: auto;
+}
+.qte-key {
+  width: 7.5cqw; height: 7.5cqw; border-radius: 1.8cqw; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cream); border: 0.6cqw solid var(--frame); color: var(--ink);
+  font-family: "Press Start 2P", monospace; font-size: 3cqw;
+  box-shadow: 0 0.6cqw 0 rgba(0,0,0,.25);
+}
+.qte-key.cur { border-color: #6fd3ff; box-shadow: 0 0 2cqw #6fd3ff; animation: keyPulse .5s ease-in-out infinite alternate; }
+.qte-key.ok  { background: #bdeab0; border-color: #3c8c3c; }
+.qte-key.bad { background: #f0b0a8; border-color: #c23a2a; }
+@keyframes keyPulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+
 /* impact flash + camera punch on perfects */
 .flash { position: absolute; inset: 0; background: #fff; opacity: .7; pointer-events: none; animation: flashOut .2s ease-out forwards; }
 @keyframes flashOut { to { opacity: 0; } }
