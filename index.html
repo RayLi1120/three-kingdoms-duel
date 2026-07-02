@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>三國對弈 — 對戰原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=5">
+</head>
+<body>
+<div class="wrap">
+  <div class="stage" id="stage">
+
+    <!-- battle field -->
+    <div class="field" id="field">
+      <div class="plat plat-foe"></div>
+      <div class="plat plat-ally"></div>
+
+      <!-- opponent (top-right) -->
+      <div class="sprite sprite-foe" id="foeSprite"><span class="sprite-body"><span class="emblem" id="foeEmblem">瑜</span></span></div>
+      <!-- player (bottom-left, "back") -->
+      <div class="sprite sprite-ally" id="allySprite"><span class="sprite-body"><span class="emblem" id="allyEmblem">關</span></span></div>
+
+      <!-- opponent info box (top-left) -->
+      <div class="info info-foe" id="foeInfo">
+        <div class="info-row">
+          <span class="nm" id="foeName">周瑜</span>
+          <span class="cls" id="foeCls">謀</span>
+          <span class="lv pixel">Lv<span id="foeLv">42</span></span>
+        </div>
+        <div class="hp-row">
+          <span class="hp-tag pixel">HP</span>
+          <div class="hp-track"><div class="hp-fill" id="foeHp"></div></div>
+        </div>
+        <div class="bk-row">
+          <span class="bk-tag pixel">架勢</span>
+          <div class="bk-track"><div class="bk-fill" id="foeBk"></div></div>
+        </div>
+      </div>
+
+      <!-- player info box (bottom-right) -->
+      <div class="info info-ally" id="allyInfo">
+        <div class="info-row">
+          <span class="nm" id="allyName">關羽</span>
+          <span class="cls" id="allyCls">猛</span>
+          <span class="lv pixel">Lv<span id="allyLv">42</span></span>
+        </div>
+        <div class="hp-row">
+          <span class="hp-tag pixel">HP</span>
+          <div class="hp-track"><div class="hp-fill" id="allyHp"></div></div>
+        </div>
+        <div class="num-row pixel"><span id="allyHpNum">520/ 520</span></div>
+        <div class="en-row">
+          <span class="en-tag pixel">戰意</span>
+          <div class="en-track"><div class="en-fill" id="allyEn"></div></div>
+        </div>
+        <div class="bk-row">
+          <span class="bk-tag pixel">架勢</span>
+          <div class="bk-track"><div class="bk-fill" id="allyBk"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom bar: message + menu -->
+    <div class="bar">
+      <div class="msgbox" id="msgbox"><p id="msg">關羽 該怎麼做？</p></div>
+
+      <!-- main 2x2 menu -->
+      <div class="menu" id="mainMenu">
+        <button class="mbtn m-fight" data-act="fight">技能<small class="pixel">FIGHT</small></button>
+        <button class="mbtn m-bag" data-act="bag">道具<small class="pixel">BAG</small></button>
+        <button class="mbtn m-party" data-act="party">換將<small class="pixel">SWAP</small></button>
+        <button class="mbtn m-run" data-act="run">撤退<small class="pixel">RUN</small></button>
+      </div>
+
+      <!-- skill list (hidden until FIGHT) -->
+      <div class="skills" id="skillMenu" hidden></div>
+    </div>
+
+    <!-- floating damage numbers layer -->
+    <div class="fx-layer" id="fxLayer"></div>
+  </div>
+  <p class="hint">光圈收合的瞬間 點擊畫面／按空白鍵 — 出手時強化攻擊，敵襲時完美格擋（無傷+反擊+蓄戰意）。架勢集滿會崩潰！鍵盤：1–4 選招、Esc 返回。</p>
+</div>
+
+<script src="js/model.js?v=3"></script>
+<script src="js/battle.js?v=4"></script>
+</body>
+</html>
