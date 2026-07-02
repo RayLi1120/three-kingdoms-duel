@@ -15,12 +15,13 @@ body {
   min-height: 100vh; padding: 12px;
   font-family: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-.wrap { width: 100%; max-width: 960px; }
+.wrap { width: 960px; }
 .pixel { font-family: "Press Start 2P", monospace; }
 
-/* the stage is the responsive container — everything inside scales in cqw */
+/* STATIC layout: the stage is locked to 960×640 — no fluid scaling.
+   container-type stays so all the cqw units inside resolve against the fixed 960px. */
 .stage {
-  position: relative; width: 100%; aspect-ratio: 3 / 2;
+  position: relative; width: 960px; height: 640px;
   container-type: inline-size;
   border-radius: 10px; overflow: hidden;
   box-shadow: 0 10px 40px -12px rgba(0,0,0,.7);
@@ -84,8 +85,9 @@ body {
   padding: 0.35cqw; overflow: hidden;
 }
 .en-track { height: 1.8cqw; }
-.hp-fill { height: 100%; width: 100%; background: var(--hp-green); border-radius: 1cqw; transition: width .5s ease, background .3s; }
-.en-fill { height: 100%; width: 0%; background: var(--en-blue); border-radius: 1cqw; transition: width .4s ease; }
+/* static UI: bar fills snap instantly — no easing motion */
+.hp-fill { height: 100%; width: 100%; background: var(--hp-green); border-radius: 1cqw; }
+.en-fill { height: 100%; width: 0%; background: var(--en-blue); border-radius: 1cqw; }
 .num-row { text-align: right; font-size: 2cqw; color: var(--ink); margin-top: 0.6cqw; }
 
 /* ---------- bottom bar ---------- */
@@ -106,10 +108,9 @@ body {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3cqw;
   background: var(--cream); border: 0.7cqw solid #999; border-radius: 2.5cqw;
   font-size: 3.4cqw; font-weight: 700; color: var(--ink); cursor: pointer;
-  font-family: inherit; transition: transform .08s, background .15s;
+  font-family: inherit;
 }
 .mbtn small { font-size: 1.7cqw; opacity: .8; }
-.mbtn:active { transform: scale(.95); }
 .m-fight { border-color: #e8513f; color: #c23a2a; }
 .m-bag   { border-color: #e0a030; color: #b07818; }
 .m-party { border-color: #58b858; color: #3c8c3c; }
@@ -123,10 +124,8 @@ body {
   position: relative; display: flex; flex-direction: column; justify-content: center; gap: 0.2cqw;
   background: var(--cream); border: 0.6cqw solid var(--frame); border-radius: 2cqw;
   padding: 0.5cqw 2cqw; cursor: pointer; font-family: inherit; text-align: left;
-  transition: transform .08s, background .15s;
 }
 .skill:hover { background: #fff; }
-.skill:active { transform: scale(.97); }
 .skill .sk-nm { font-size: 3cqw; font-weight: 700; color: var(--ink); }
 .skill .sk-meta { font-size: 1.9cqw; color: #6a6a72; }
 .skill .sk-cd { position: absolute; top: 0.6cqw; right: 1cqw; font-size: 1.8cqw; color: #c23a2a; font-weight: 700; }
@@ -167,8 +166,7 @@ body {
 .enter-ally { animation: slideL .6s ease; }
 @keyframes slideR { from { transform: translateX(40cqw); opacity: 0; } }
 @keyframes slideL { from { transform: translateX(-40cqw); opacity: 0; } }
-.shake { animation: stageShake .3s; }
-@keyframes stageShake { 0%,100%{transform:translate(0,0);} 25%{transform:translate(-0.5%,0.5%);} 75%{transform:translate(0.5%,-0.5%);} }
+/* static UI: no whole-screen shake/punch — the flash overlay carries big-hit feedback */
 
 /* impact burst spawned on the struck unit: a slash streak + an expanding shockwave ring */
 .slash { position: absolute; width: 26cqw; height: 26cqw; pointer-events: none;
@@ -240,17 +238,31 @@ body {
 .qte-key.bad { background: #f0b0a8; border-color: #c23a2a; }
 @keyframes keyPulse { from { transform: scale(1); } to { transform: scale(1.12); } }
 
-/* impact flash + camera punch on perfects */
+/* 瞄準點：mixed-sequence click step — a dot appears on the field and must be clicked */
+.qte-dot {
+  position: absolute; width: 6cqw; height: 6cqw; border-radius: 50%;
+  transform: translate(-50%,-50%); pointer-events: auto; cursor: crosshair;
+  background: radial-gradient(circle at 40% 35%, #fff, #6fd3ff 70%);
+  border: 0.5cqw solid #fff; box-shadow: 0 0 2.4cqw #6fd3ff;
+  animation: keyPulse .4s ease-in-out infinite alternate;
+}
+
+/* 連擊 perfect-streak counter (top-center, text only — static position) */
+.combo-badge {
+  position: absolute; top: 1.6cqw; left: 50%; transform: translateX(-50%);
+  font-size: 2.6cqw; color: #ffd23f; text-shadow: 0 0.35cqw 0 rgba(0,0,0,.5);
+  pointer-events: none; z-index: 5;
+}
+
+/* impact flash on perfects (no screen movement) */
 .flash { position: absolute; inset: 0; background: #fff; opacity: .7; pointer-events: none; animation: flashOut .2s ease-out forwards; }
 @keyframes flashOut { to { opacity: 0; } }
-.punch { animation: punch .16s ease-out; }
-@keyframes punch { 40% { transform: scale(1.035); } }
 
 /* 架勢 break gauge */
 .bk-row { display: flex; align-items: center; gap: 1cqw; margin-top: 0.7cqw; }
 .bk-tag { font-size: 1.7cqw; color: #b06a10; }
 .bk-track { flex: 1; height: 1.5cqw; background: #485058; border-radius: 1cqw; padding: 0.3cqw; overflow: hidden; }
-.bk-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #f0a030, #ff6a3f); border-radius: 1cqw; transition: width .4s ease; }
+.bk-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #f0a030, #ff6a3f); border-radius: 1cqw; }
 
 .hidden { display: none !important; }
 .hint { color: #8b93a7; font-size: 13px; text-align: center; margin-top: 10px; }

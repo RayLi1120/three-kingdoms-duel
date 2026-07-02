@@ -10,13 +10,17 @@ turns. UI mimics the Pokémon FireRed/LeafGreen battle screen.
 ## How to play
 - Pick a skill from the **技能 (FIGHT)** menu each turn; both sides resolve in speed order.
 - Slot 1 is free, slots 2–3 have cooldowns, slot 4 is an ultimate gated by the 戰意 gauge.
-- **Timed hits** — every skill has its own input pattern (完美 ×1.3 dmg +戰意, 不錯 ×1.0, 失手 ×0.7):
+- **Timed hits (hard mode)** — every skill has its own input pattern
+  (完美 ×1.3 dmg +戰意, 不錯 ×1.0, 失手 ×0.55 **and no 戰意 gained**):
   - *Free skill*: a ring converges on the foe — click / press Space as it closes.
-  - *Combo skill*: a 3-key sequence (WASD/JK) appears — type it in order (or click the
-    key chips); fast & flawless = perfect, one wrong key = fail.
+  - *Combo skill*: a 4-step **mixed** sequence — key chips (WASD/JK) and ⊙ aim-dots that
+    must be clicked on the field; one wrong input = fail, flawless & fast = perfect.
   - *Heavy skill* (破甲/火攻): **hold** mouse or Space to charge, release the instant the
     growing ring meets the target — overcharge and it fizzles.
-  - *Ultimate*: three rings chain at random spots around the foe — hit each one.
+  - *Ultimate*: four **drifting** rings chain around the foe — each must be clicked
+    dead-on (keyboard won't do; aim matters).
+- **連擊 streak**: consecutive perfects stack +6% damage each (max +30%); any miss resets it.
+- Faster enemies have tighter parry windows. Sloppy parries build your own break gauge fast.
 - **Parry**: when the foe attacks, an orange ring converges on you — perfect timing
   takes **zero damage and counterattacks** (+戰意); good halves it; miss eats it all.
 - **架勢 Break**: clean hits build the foe's break gauge (sloppy defense builds yours);
