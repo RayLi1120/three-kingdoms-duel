@@ -15,6 +15,11 @@ turns. UI mimics the Pokémon FireRed/LeafGreen battle screen.
   hero falls, the replacement pick is free. 鎖定 (lock) prevents swapping. Watch the
   3 team pips and the foe's 戰意 bar (a full bar means an ultimate is coming); the
   ▲/▼ hint shows the class matchup.
+- **銅錢 economy**: every KO pays out — down an enemy hero for **+250**, get **+100**
+  consolation when yours falls; **+500** for winning the battle, **+150** for losing.
+  Money persists (localStorage). Spend it in the **商店** tab on the team screen:
+  金創藥 (heal 35%), 淨心散 (cleanse), 烈酒 (+50 戰意), 護心鏡 (shield). Use items
+  in battle from **道具 (BAG)** — it costs your action, like swapping.
 - Pick a skill from the **技能 (FIGHT)** menu each turn; both sides resolve in speed order.
 - Slot 1 is free, slots 2–3 have cooldowns, slot 4 is an ultimate gated by the 戰意 gauge.
 - **Timed hits (hard mode)** — every skill has its own input pattern

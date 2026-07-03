@@ -272,6 +272,34 @@ body {
   padding: 2cqw 3cqw; display: flex; flex-direction: column; gap: 1.6cqw;
 }
 .ts-title { font-size: 3.6cqw; color: var(--ink); text-align: center; }
+.ts-head { display: flex; align-items: center; justify-content: space-between; }
+.ts-tabs { display: flex; gap: 1cqw; }
+.ts-tab {
+  font-family: inherit; font-size: 2.2cqw; font-weight: 700; cursor: pointer;
+  padding: 0.6cqw 2.2cqw; border-radius: 1.2cqw;
+  background: #e8e8d8; color: #7a7a68; border: 0.4cqw solid #b9b9a6;
+}
+.ts-tab.sel { background: var(--cream); color: var(--ink); border-color: var(--frame); }
+.ts-money { font-size: 2.2cqw; color: #b07818; }
+
+/* shop cards reuse the ts grid; 2 columns of wider cards */
+.ts-grid.shop { grid-template-columns: repeat(2, 1fr); }
+.shop-item {
+  display: flex; align-items: center; gap: 1.6cqw; text-align: left;
+  padding: 1.2cqw 2cqw; cursor: pointer; font-family: inherit;
+  background: #fff; border: 0.45cqw solid #b9b9a6; border-radius: 1.4cqw;
+}
+.shop-item:hover { border-color: var(--frame); }
+.shop-item:disabled { opacity: .5; cursor: default; }
+.shop-icon {
+  width: 5.5cqw; height: 5.5cqw; border-radius: 1.2cqw; flex: none;
+  background: #f0e6c8; border: 0.4cqw solid #c8a000;
+  display: flex; align-items: center; justify-content: center; font-size: 3cqw;
+}
+.shop-info { flex: 1; display: flex; flex-direction: column; gap: 0.3cqw; }
+.shop-nm { font-size: 2.4cqw; font-weight: 700; color: var(--ink); }
+.shop-desc { font-size: 1.8cqw; color: #6a6a72; }
+.shop-price { font-size: 2cqw; font-weight: 700; color: #b07818; white-space: nowrap; }
 .ts-grid {
   flex: 1; display: grid; grid-template-columns: repeat(5, 1fr);
   gap: 1cqw; overflow-y: auto; align-content: start;

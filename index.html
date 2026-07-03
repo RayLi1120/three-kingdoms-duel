@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body>
 <div class="wrap">
@@ -87,6 +87,9 @@
 
       <!-- party / swap list (hidden until 換將 or forced pick) -->
       <div class="skills" id="partyMenu" hidden></div>
+
+      <!-- bag: consumable items (hidden until 道具) -->
+      <div class="skills" id="bagMenu" hidden></div>
     </div>
 
     <!-- 連擊 perfect-streak counter -->
@@ -98,8 +101,16 @@
     <!-- team select overlay (shown before battle) -->
     <div class="team-select" id="teamSelect" hidden>
       <div class="ts-panel">
-        <h2 class="ts-title">選擇出戰隊伍（3 名）</h2>
+        <div class="ts-head">
+          <div class="ts-tabs">
+            <button class="ts-tab sel" id="tabTeam">出戰隊伍</button>
+            <button class="ts-tab" id="tabShop">商店</button>
+          </div>
+          <span class="ts-money pixel" id="tsMoney">銅錢 0</span>
+        </div>
+        <h2 class="ts-title" id="tsTitle">選擇出戰隊伍（3 名）</h2>
         <div class="ts-grid" id="tsGrid"></div>
+        <div class="ts-grid shop" id="shopGrid" hidden></div>
         <div class="ts-actions">
           <button class="ts-btn" id="tsRandom">隨機隊伍</button>
           <button class="ts-btn primary" id="tsStart" disabled>開戰！</button>
@@ -107,10 +118,10 @@
       </div>
     </div>
   </div>
-  <p class="hint">3v3 隊伍戰：擊倒敵方全隊獲勝，換將要消耗行動（被鎖定時不能換）。硬派輸入：光圈（點擊/空白鍵）・混合連按（按鍵＋瞄準點）・蓄力（按住再放開）・終結技四連瞄準光圈（滑鼠點中）。失手＝傷害大減且不蓄戰意；連續完美疊連擊；敵越快格擋窗越窄。鍵盤：1–4 選招、Esc 返回。</p>
+  <p class="hint">3v3 隊伍戰：擊倒敵方全隊獲勝。擊倒敵將 +250 銅錢、勝利 +500（敗北也有安慰獎）；戰前商店採購道具，戰鬥中「道具」使用（消耗行動，同換將）。硬派輸入：光圈・混合連按・蓄力・終結技四連瞄準；失手＝傷害大減且不蓄戰意；連續完美疊連擊。鍵盤：1–4 選招、Esc 返回。</p>
 </div>
 
-<script src="js/model.js?v=3"></script>
-<script src="js/battle.js?v=10"></script>
+<script src="js/model.js?v=4"></script>
+<script src="js/battle.js?v=12"></script>
 </body>
 </html>

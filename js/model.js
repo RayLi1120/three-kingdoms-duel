@@ -270,6 +270,14 @@ const HERO_DB = {
 
 const ROSTER = Object.keys(HERO_DB);
 
+// 道具：戰鬥中使用消耗一次行動（同換將）。fx 由 battle.js 的 useItem 解讀。
+const ITEM_DB = {
+  jin_chuang_yao: { name: "金創藥", price: 150, fx: "heal",    desc: "回復 35% 生命" },
+  jing_xin_san:   { name: "淨心散", price: 100, fx: "cleanse", desc: "解除所有負面狀態" },
+  lie_jiu:        { name: "烈酒",   price: 120, fx: "energy",  desc: "戰意 +50" },
+  hu_xin_jing:    { name: "護心鏡", price: 150, fx: "shield",  desc: "護盾 2 回合" },
+};
+
 // instantiate a battle-ready unit from a template id
 function makeUnit(id) {
   const t = HERO_DB[id];
@@ -298,4 +306,4 @@ function randomIds(n) {
   return pool.slice(0, n);
 }
 
-if (typeof module !== "undefined") module.exports = { HERO_DB, ROSTER, makeUnit, triMult, randomIds, CLASS_BEATS, CLASS_NAME, CLASS_COLOR };
+if (typeof module !== "undefined") module.exports = { HERO_DB, ROSTER, ITEM_DB, makeUnit, triMult, randomIds, CLASS_BEATS, CLASS_NAME, CLASS_COLOR };

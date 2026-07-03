@@ -8,8 +8,18 @@ const rand = p => Math.random() < p;
 
 // 3v3 隊伍戰：ally/foe 指向出戰中的武將；Team 陣列存整隊
 const state = { allyTeam: [], foeTeam: [], allyIdx: 0, foeIdx: 0, ally: null, foe: null, busy: true, over: false, combo: 0 };
+
+// ---------- 銅錢與道具（localStorage 存檔）----------
+// 擊倒敵將 +250、我將陣亡 +100（安慰獎）、勝利 +500、敗北 +150
+const PAY = { foeKO: 250, allyKO: 100, win: 500, lose: 150 };
+const SAVE_KEY = "sgdy_save";
+const save = Object.assign({ money: 300, items: {} },
+  (() => { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch { return {}; } })());
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch {} }
+function addMoney(n) { save.money += n; persist(); paintMoney(); }
+function paintMoney() { const el = $("tsMoney"); if (el) el.textContent = `銅錢 ${save.money}`; }
 // debug/verification hooks: DUEL.forceQte = 'perfect'|'good'|'miss' resolves QTEs instantly
-const DUEL = window.DUEL = { state, forceQte: null };
+const DUEL = window.DUEL = { state, save, forceQte: null };
 
 // ---------- rendering ----------
 function paintUnit(side) {
@@ -532,9 +542,25 @@ async function swapIn(side, idx, announce = true) {
   if (announce) await say(side === "ally" ? `上吧，${team[idx].name}！` : `對手派出了 ${team[idx].name}！`, 500);
 }
 
+// 對出戰中的我方武將使用道具
+async function useItem(id) {
+  const it = ITEM_DB[id], u = state.ally;
+  save.items[id]--; if (save.items[id] <= 0) delete save.items[id];
+  persist();
+  await say(`使用了 ${it.name}！`, 300);
+  if (it.fx === "heal") { const h = Math.round(u.maxHp * 0.35); u.hp = Math.min(u.maxHp, u.hp + h); floatDmg("ally", h, "heal"); await say(`${u.name} 回復了體力！`, 450); }
+  else if (it.fx === "cleanse") { for (const k of ["burn", "bleed", "slow", "distract", "vulnerable", "stun", "lock"]) delete u.statuses[k]; await say(`${u.name} 的負面狀態一掃而空！`, 450); }
+  else if (it.fx === "energy") { u.energy = Math.min(u.energyMax, u.energy + 50); await say(`${u.name} 戰意高漲！`, 450); }
+  else if (it.fx === "shield") { u.statuses.shield = 2; await say(`${u.name} 豎起護盾！`, 450); }
+  paintUnit("ally");
+}
+
 async function endBattle(win) {
   state.over = true; state.busy = true;
-  await say(win ? "敵方全軍覆沒——你贏了！　▶ 點擊任意處再戰" : "我方全軍覆沒——你輸了…　▶ 點擊任意處再戰");
+  const bonus = win ? PAY.win : PAY.lose;
+  addMoney(bonus);
+  await say(win ? `敵方全軍覆沒——你贏了！獲得 ${bonus} 銅錢` : `我方全軍覆沒——你輸了…獲得 ${bonus} 銅錢`, 600);
+  await say(`目前共有 ${save.money} 銅錢。　▶ 點擊任意處再戰`);
   $("stage").addEventListener("click", () => location.reload(), { once: true });
   return true;
 }
@@ -549,6 +575,13 @@ async function takeTurn(action) {
   if (action.type === "swap") {
     await say(`回來吧，${state.ally.name}！`, 300);
     await swapIn("ally", action.to);
+    if (state.foe.hp > 0) {
+      await act("foe", fp.s);
+      await wait(180);
+      if (await checkFaint()) return;
+    }
+  } else if (action.type === "item") {
+    await useItem(action.id);            // 用道具＝消耗行動，敵方照打
     if (state.foe.hp > 0) {
       await act("foe", fp.s);
       await wait(180);
@@ -582,7 +615,8 @@ async function checkFaint() {
     state.foe._fainted = true;
     $("foeSprite").classList.add("faint");
     paintPips();
-    await say(`${state.foe.name} 倒下了！`, 700);
+    addMoney(PAY.foeKO);
+    await say(`${state.foe.name} 倒下了！獲得 ${PAY.foeKO} 銅錢`, 700);
     const bench = aliveBench(state.foeTeam, state.foeIdx);
     if (!bench.length) return endBattle(true);
     await wait(300);
@@ -592,7 +626,8 @@ async function checkFaint() {
     state.ally._fainted = true;
     $("allySprite").classList.add("faint");
     paintPips();
-    await say(`${state.ally.name} 倒下了！`, 700);
+    addMoney(PAY.allyKO);
+    await say(`${state.ally.name} 倒下了！獲得撫恤 ${PAY.allyKO} 銅錢`, 700);
     const bench = aliveBench(state.allyTeam, state.allyIdx);
     if (!bench.length) return endBattle(false);
     await say("選擇下一位出戰武將！", 200);
@@ -603,8 +638,8 @@ async function checkFaint() {
 }
 
 // ---------- menus ----------
-function openMenu() { $("mainMenu").hidden = false; $("skillMenu").hidden = true; $("partyMenu").hidden = true; }
-function closeMenus() { $("mainMenu").hidden = true; $("skillMenu").hidden = true; $("partyMenu").hidden = true; }
+function openMenu() { $("mainMenu").hidden = false; $("skillMenu").hidden = true; $("partyMenu").hidden = true; $("bagMenu").hidden = true; }
+function closeMenus() { $("mainMenu").hidden = true; $("skillMenu").hidden = true; $("partyMenu").hidden = true; $("bagMenu").hidden = true; }
 function openSkills() {
   const m = $("skillMenu"); m.innerHTML = "";
   state.ally.skills.forEach((s, i) => {
@@ -657,6 +692,25 @@ function tryOpenParty() {
   openParty(false);
 }
 
+// 道具袋：列出持有的道具，點擊使用（消耗行動）
+function openBag() {
+  const owned = Object.keys(save.items).filter(id => save.items[id] > 0 && ITEM_DB[id]);
+  if (!owned.length) { say("沒有道具了——戰前可到商店採購。"); return; }
+  const m = $("bagMenu"); m.innerHTML = "";
+  owned.forEach(id => {
+    const it = ITEM_DB[id];
+    const b = document.createElement("button");
+    b.className = "skill";
+    b.innerHTML = `<span class="sk-nm">${it.name} <small>×${save.items[id]}</small></span><span class="sk-meta">${it.desc}</span>`;
+    b.onclick = () => takeTurn({ type: "item", id });
+    m.appendChild(b);
+  });
+  const back = document.createElement("button");
+  back.className = "skill back"; back.textContent = "← 返回";
+  back.onclick = openMenu; m.appendChild(back);
+  $("mainMenu").hidden = true; $("skillMenu").hidden = true; $("partyMenu").hidden = true; m.hidden = false;
+}
+
 function bindMenu() {
   $("mainMenu").querySelectorAll(".mbtn").forEach(btn => {
     btn.onclick = () => {
@@ -664,7 +718,7 @@ function bindMenu() {
       const act = btn.dataset.act;
       if (act === "fight") openSkills();
       else if (act === "run") say("無法從對戰中逃走！");
-      else if (act === "bag") say("道具系統尚未開放。");
+      else if (act === "bag") openBag();
       else if (act === "party") tryOpenParty();
     };
   });
@@ -680,16 +734,40 @@ function bindKeys() {
       return;
     }
     if (state.busy || state.over) return;
-    const mm = $("mainMenu"), sm = $("skillMenu");
+    const mm = $("mainMenu"), sm = $("skillMenu"), bm = $("bagMenu");
     if (!mm.hidden) {
       if (e.key === "1" || e.code === "Space" || e.code === "Enter") { e.preventDefault(); openSkills(); }
-      else if (e.key === "2") say("道具系統尚未開放。");
+      else if (e.key === "2") openBag();
       else if (e.key === "3") tryOpenParty();
       else if (e.key === "4") say("無法從對戰中逃走！");
     } else if (!sm.hidden) {
       if (e.key >= "1" && e.key <= "4") { const b = sm.children[+e.key - 1]; if (b && !b.classList.contains("disabled")) b.click(); }
       else if (e.key === "Escape" || e.key === "b") openMenu();
+    } else if (!bm.hidden) {
+      if (e.key >= "1" && e.key <= "4") { const b = bm.children[+e.key - 1]; if (b && !b.classList.contains("back")) b.click(); }
+      else if (e.key === "Escape" || e.key === "b") openMenu();
     }
+  });
+}
+
+// ---------- shop ----------
+function renderShop() {
+  const g = $("shopGrid"); g.innerHTML = "";
+  Object.entries(ITEM_DB).forEach(([id, it]) => {
+    const b = document.createElement("button");
+    b.className = "shop-item";
+    b.disabled = save.money < it.price;
+    b.innerHTML = `<span class="shop-icon">${it.name[0]}</span>` +
+      `<span class="shop-info"><span class="shop-nm">${it.name}<small>　持有 ×${save.items[id] || 0}</small></span>` +
+      `<span class="shop-desc">${it.desc}</span></span>` +
+      `<span class="shop-price">${it.price} 銅錢</span>`;
+    b.onclick = () => {
+      if (save.money < it.price) return;
+      save.money -= it.price;
+      save.items[id] = (save.items[id] || 0) + 1;
+      persist(); paintMoney(); renderShop();
+    };
+    g.appendChild(b);
   });
 }
 
@@ -698,6 +776,18 @@ function showTeamSelect() {
   return new Promise(res => {
     const grid = $("tsGrid"); grid.innerHTML = "";
     const startB = $("tsStart");
+    // 分頁：出戰隊伍 / 商店
+    const setTab = shop => {
+      $("tabTeam").classList.toggle("sel", !shop);
+      $("tabShop").classList.toggle("sel", shop);
+      $("tsGrid").hidden = shop; $("shopGrid").hidden = !shop;
+      $("tsTitle").textContent = shop ? "商店——銅錢採購道具（戰鬥中於道具選單使用）" : "選擇出戰隊伍（3 名）";
+      $("tsRandom").hidden = shop;
+      if (shop) renderShop();
+    };
+    $("tabTeam").onclick = () => setTab(false);
+    $("tabShop").onclick = () => setTab(true);
+    paintMoney();
     let picked = [];
     const renumber = () => {
       grid.querySelectorAll(".ts-chip").forEach(c => {
