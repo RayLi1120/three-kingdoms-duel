@@ -6,7 +6,8 @@ const FAST = /[?&]fast\b/.test(location.search);   // test mode: instant text, s
 const wait = ms => new Promise(r => setTimeout(r, FAST ? Math.min(ms, 40) : ms));
 const rand = p => Math.random() < p;
 
-const state = { ally: null, foe: null, busy: true, over: false, combo: 0 };
+// 3v3 隊伍戰：ally/foe 指向出戰中的武將；Team 陣列存整隊
+const state = { allyTeam: [], foeTeam: [], allyIdx: 0, foeIdx: 0, ally: null, foe: null, busy: true, over: false, combo: 0 };
 // debug/verification hooks: DUEL.forceQte = 'perfect'|'good'|'miss' resolves QTEs instantly
 const DUEL = window.DUEL = { state, forceQte: null };
 
@@ -22,9 +23,27 @@ function paintUnit(side) {
   const hp = $(`${side}Hp`); hp.style.width = pct + "%";
   hp.style.background = pct > 50 ? "var(--hp-green)" : pct > 20 ? "var(--hp-amber)" : "var(--hp-red)";
   $(`${side}Bk`).style.width = (u.break || 0) + "%";
-  if (side === "ally") {
-    $("allyHpNum").textContent = `${Math.max(0, Math.round(u.hp))}/ ${u.maxHp}`;
-    $("allyEn").style.width = (u.energy / u.energyMax * 100) + "%";
+  $(`${side}En`).style.width = (u.energy / u.energyMax * 100) + "%";   // 敵我都顯示戰意（可預判終結技）
+  if (side === "ally") $("allyHpNum").textContent = `${Math.max(0, Math.round(u.hp))}/ ${u.maxHp}`;
+  // 剋制提示：▲ 我剋制對方 / ▼ 我被剋制 / — 無剋制
+  if (state.ally && state.foe) {
+    const t = triMult(state.ally.cls, state.foe.cls);
+    const h = $("matchHint");
+    h.textContent = t > 1 ? "▲" : t < 1 ? "▼" : "—";
+    h.style.color = t > 1 ? "#3c8c3c" : t < 1 ? "#c23a2a" : "#8b93a7";
+    h.title = t > 1 ? "你剋制對方（×1.25）" : t < 1 ? "你被剋制（×0.8）" : "互不剋制";
+  }
+}
+
+// 隊伍狀態點：出戰中 / 存活 / 陣亡
+function paintPips() {
+  for (const side of ["ally", "foe"]) {
+    const team = side === "ally" ? state.allyTeam : state.foeTeam;
+    const idx = side === "ally" ? state.allyIdx : state.foeIdx;
+    [...$(`${side}Pips`).children].forEach((p, i) => {
+      const u = team[i];
+      p.className = !u ? "" : u.hp <= 0 ? "dead" : i === idx ? "active" : "alive";
+    });
   }
 }
 
@@ -360,7 +379,7 @@ function applyOnHit(att, def, sk) {
     case "burn": def.statuses.burn = 3; break;
     case "distract": def.statuses.distract = 2; break;
     case "slow": def.statuses.slow = 2; break;
-    case "stun": if (rand(0.6)) def.statuses.stun = 1; break;
+    case "stun": if (rand(0.6)) def.statuses.stun = 2; break;   // 2＝就算目標已行動也能撐到下回合
     case "lock": def.statuses.lock = 2; def.statuses.vulnerable = 2; break;
     case "rend": def.statuses.vulnerable = 2; break;
     case "nuke": def.statuses.vulnerable = 2; break;
@@ -380,7 +399,8 @@ async function addBreak(side, n) {
   u.break = Math.min(100, (u.break || 0) + n);
   paintUnit(side);
   if (u.break >= 100) {
-    u.break = 0; u.statuses.stun = 1; u.statuses.vulnerable = 2;
+    // stun=2：若目標本回合已行動，撐過同回合 upkeep 的遞減，下回合必定跳過（act 消耗時整個刪除）
+    u.break = 0; u.statuses.stun = 2; u.statuses.vulnerable = 2;
     replay($(`${side}Sprite`), "hit"); flash();
     paintUnit(side);
     await say(`${u.name} 架勢崩潰，露出破綻！`, 550);
@@ -496,21 +516,57 @@ function aiPick(u) {
 }
 function hasAnyBuff(u) { return u.statuses.atkup || u.statuses.shield || u.statuses.dodge; }
 
+// ---------- party ----------
+function aliveBench(team, curIdx) { return team.map((u, i) => ({ u, i })).filter(x => x.i !== curIdx && x.u.hp > 0); }
+
+// 換上第 idx 位（保留該武將的 HP/戰意/狀態/冷卻）
+async function swapIn(side, idx, announce = true) {
+  const team = side === "ally" ? state.allyTeam : state.foeTeam;
+  if (side === "ally") { state.allyIdx = idx; state.ally = team[idx]; }
+  else { state.foeIdx = idx; state.foe = team[idx]; }
+  const sp = $(`${side}Sprite`);
+  sp.classList.remove("faint");
+  paintUnit(side); paintPips();
+  replay(sp, side === "ally" ? "enter-ally" : "enter-foe");
+  setTimeout(() => sp.classList.remove("enter-ally", "enter-foe"), 700);
+  if (announce) await say(side === "ally" ? `上吧，${team[idx].name}！` : `對手派出了 ${team[idx].name}！`, 500);
+}
+
+async function endBattle(win) {
+  state.over = true; state.busy = true;
+  await say(win ? "敵方全軍覆沒——你贏了！　▶ 點擊任意處再戰" : "我方全軍覆沒——你輸了…　▶ 點擊任意處再戰");
+  $("stage").addEventListener("click", () => location.reload(), { once: true });
+  return true;
+}
+
 // ---------- turn ----------
-async function takeTurn(playerIdx) {
+// action: { type:'skill', idx } 或 { type:'swap', to }（換將消耗行動，敵方白打一輪）
+async function takeTurn(action) {
   if (state.busy || state.over) return;
   state.busy = true; closeMenus();
-  state.ally.cd[playerIdx] = state.ally.skills[playerIdx].cd;
-  const pAction = { side: "ally", sk: state.ally.skills[playerIdx] };
   const fp = aiPick(state.foe); state.foe.cd[fp.i] = fp.s.cd;
-  const eAction = { side: "foe", sk: fp.s };
 
-  const order = effSpeed(state.ally) >= effSpeed(state.foe) ? [pAction, eAction] : [eAction, pAction];
-  for (const a of order) {
-    if (state.ally.hp <= 0 || state.foe.hp <= 0) break;
-    await act(a.side, a.sk);
-    await wait(180);
-    if (await checkFaint()) return;
+  if (action.type === "swap") {
+    await say(`回來吧，${state.ally.name}！`, 300);
+    await swapIn("ally", action.to);
+    if (state.foe.hp > 0) {
+      await act("foe", fp.s);
+      await wait(180);
+      if (await checkFaint()) return;
+    }
+  } else {
+    state.ally.cd[action.idx] = state.ally.skills[action.idx].cd;
+    // who: 綁定選招的武將——若中途倒下被替補，替補者不繼承亡者的行動
+    const pAction = { side: "ally", sk: state.ally.skills[action.idx], who: state.ally };
+    const eAction = { side: "foe", sk: fp.s, who: state.foe };
+    const order = effSpeed(state.ally) >= effSpeed(state.foe) ? [pAction, eAction] : [eAction, pAction];
+    for (const a of order) {
+      if (state.ally.hp <= 0 || state.foe.hp <= 0) break;
+      if ((a.side === "ally" ? state.ally : state.foe) !== a.who) continue;   // 選招者已不在場
+      await act(a.side, a.sk);
+      await wait(180);
+      if (await checkFaint()) return;
+    }
   }
   await upkeep("ally"); await upkeep("foe");
   if (await checkFaint()) return;
@@ -520,25 +576,35 @@ async function takeTurn(playerIdx) {
   openMenu();
 }
 
+// 倒下處理：敵方自動換下一位；我方免費強制選人（不耗行動）；全隊覆沒→勝負
 async function checkFaint() {
-  for (const side of ["foe", "ally"]) {
-    const u = side === "foe" ? state.foe : state.ally;
-    if (u.hp <= 0 && !u._fainted) {
-      u._fainted = true;
-      $(`${side}Sprite`).classList.add("faint");
-      await say(`${u.name} 倒下了！`, 700);
-      state.over = true; state.busy = true;
-      await say(side === "foe" ? `你贏了！　▶ 點擊任意處再戰` : `你輸了…　▶ 點擊任意處再戰`);
-      $("stage").addEventListener("click", () => location.reload(), { once: true });
-      return true;
-    }
+  if (state.foe.hp <= 0 && !state.foe._fainted) {
+    state.foe._fainted = true;
+    $("foeSprite").classList.add("faint");
+    paintPips();
+    await say(`${state.foe.name} 倒下了！`, 700);
+    const bench = aliveBench(state.foeTeam, state.foeIdx);
+    if (!bench.length) return endBattle(true);
+    await wait(300);
+    await swapIn("foe", bench[0].i);
+  }
+  if (state.ally.hp <= 0 && !state.ally._fainted) {
+    state.ally._fainted = true;
+    $("allySprite").classList.add("faint");
+    paintPips();
+    await say(`${state.ally.name} 倒下了！`, 700);
+    const bench = aliveBench(state.allyTeam, state.allyIdx);
+    if (!bench.length) return endBattle(false);
+    await say("選擇下一位出戰武將！", 200);
+    openParty(true);            // 強制選人：免費，選完才繼續
+    return true;                // 中斷本回合流程
   }
   return false;
 }
 
 // ---------- menus ----------
-function openMenu() { $("mainMenu").hidden = false; $("skillMenu").hidden = true; }
-function closeMenus() { $("mainMenu").hidden = true; $("skillMenu").hidden = true; }
+function openMenu() { $("mainMenu").hidden = false; $("skillMenu").hidden = true; $("partyMenu").hidden = true; }
+function closeMenus() { $("mainMenu").hidden = true; $("skillMenu").hidden = true; $("partyMenu").hidden = true; }
 function openSkills() {
   const m = $("skillMenu"); m.innerHTML = "";
   state.ally.skills.forEach((s, i) => {
@@ -548,13 +614,47 @@ function openSkills() {
     b.className = "skill" + (onCd || locked ? " disabled" : "");
     b.innerHTML = `<span class="sk-nm">${s.name}</span><span class="sk-meta">${s.desc}</span>` +
       (onCd ? `<span class="sk-cd">CD${state.ally.cd[i]}</span>` : locked ? `<span class="sk-cd">戰意</span>` : ``);
-    if (!onCd && !locked) b.onclick = () => takeTurn(i);
+    if (!onCd && !locked) b.onclick = () => takeTurn({ type: "skill", idx: i });
     m.appendChild(b);
   });
   const back = document.createElement("button");
   back.className = "skill back"; back.textContent = "← 返回";
   back.onclick = openMenu; m.appendChild(back);
-  $("mainMenu").hidden = true; m.hidden = false;
+  $("mainMenu").hidden = true; $("partyMenu").hidden = true; m.hidden = false;
+}
+
+// 換將選單。forced=true：出戰武將倒下後的免費選人（不耗行動、不能返回）
+function openParty(forced = false) {
+  const m = $("partyMenu"); m.innerHTML = "";
+  state.allyTeam.forEach((u, i) => {
+    const active = i === state.allyIdx, dead = u.hp <= 0;
+    const b = document.createElement("button");
+    b.className = "skill" + ((active || dead) ? " disabled" : "");
+    b.innerHTML = `<span class="sk-nm">${u.name} <small style="color:${CLASS_COLOR[u.cls]}">${u.cls}</small></span>` +
+      `<span class="sk-meta">${dead ? "已倒下" : `HP ${Math.max(0, Math.round(u.hp))}/${u.maxHp}`}${active ? "（出戰中）" : ""}</span>`;
+    if (!active && !dead) b.onclick = async () => {
+      if (forced) {           // 免費補位：直接換上，回到指令選單
+        m.hidden = true;
+        await swapIn("ally", i);
+        state.busy = false;
+        await say(`${state.ally.name} 該怎麼做？`);
+        openMenu();
+      } else takeTurn({ type: "swap", to: i });
+    };
+    m.appendChild(b);
+  });
+  if (!forced) {
+    const back = document.createElement("button");
+    back.className = "skill back"; back.textContent = "← 返回";
+    back.onclick = openMenu; m.appendChild(back);
+  }
+  $("mainMenu").hidden = true; $("skillMenu").hidden = true; m.hidden = false;
+}
+
+function tryOpenParty() {
+  if (state.ally.statuses.lock) { say(`${state.ally.name} 被鎖定，無法換將！`); return; }
+  if (!aliveBench(state.allyTeam, state.allyIdx).length) { say("沒有可替換的武將了！"); return; }
+  openParty(false);
 }
 
 function bindMenu() {
@@ -565,7 +665,7 @@ function bindMenu() {
       if (act === "fight") openSkills();
       else if (act === "run") say("無法從對戰中逃走！");
       else if (act === "bag") say("道具系統尚未開放。");
-      else if (act === "party") say("換將系統尚未開放。");
+      else if (act === "party") tryOpenParty();
     };
   });
 }
@@ -573,12 +673,18 @@ function bindMenu() {
 // keyboard: 1–4 選單/招式、Esc 返回（QTE 的空白鍵有自己的監聽，只在 busy 時生效）
 function bindKeys() {
   document.addEventListener("keydown", e => {
+    const pm = $("partyMenu");
+    if (!pm.hidden) {          // 換將選單（含強制選人，busy 時也要能用）
+      if (e.key >= "1" && e.key <= "3") { const b = pm.children[+e.key - 1]; if (b && !b.classList.contains("disabled")) b.click(); }
+      else if ((e.key === "Escape" || e.key === "b") && !state.busy) openMenu();
+      return;
+    }
     if (state.busy || state.over) return;
     const mm = $("mainMenu"), sm = $("skillMenu");
     if (!mm.hidden) {
       if (e.key === "1" || e.code === "Space" || e.code === "Enter") { e.preventDefault(); openSkills(); }
       else if (e.key === "2") say("道具系統尚未開放。");
-      else if (e.key === "3") say("換將系統尚未開放。");
+      else if (e.key === "3") tryOpenParty();
       else if (e.key === "4") say("無法從對戰中逃走！");
     } else if (!sm.hidden) {
       if (e.key >= "1" && e.key <= "4") { const b = sm.children[+e.key - 1]; if (b && !b.classList.contains("disabled")) b.click(); }
@@ -587,14 +693,61 @@ function bindKeys() {
   });
 }
 
+// ---------- team select ----------
+function showTeamSelect() {
+  return new Promise(res => {
+    const grid = $("tsGrid"); grid.innerHTML = "";
+    const startB = $("tsStart");
+    let picked = [];
+    const renumber = () => {
+      grid.querySelectorAll(".ts-chip").forEach(c => {
+        const n = picked.indexOf(c.dataset.id);
+        c.classList.toggle("sel", n >= 0);
+        let tag = c.querySelector(".ts-n");
+        if (n >= 0) {
+          if (!tag) { tag = document.createElement("span"); tag.className = "ts-n"; c.appendChild(tag); }
+          tag.textContent = n + 1;
+        } else tag?.remove();
+      });
+      startB.disabled = picked.length !== 3;
+      startB.textContent = picked.length === 3 ? "開戰！" : `開戰！（${picked.length}/3）`;
+    };
+    ROSTER.forEach(id => {
+      const h = HERO_DB[id];
+      const b = document.createElement("button");
+      b.className = "ts-chip"; b.dataset.id = id;
+      b.innerHTML = `<span class="ts-badge" style="background:${CLASS_COLOR[h.cls]}">${h.emblem}</span>` +
+        `<span class="ts-nm">${h.name}</span><span class="ts-cls" style="color:${CLASS_COLOR[h.cls]}">${h.cls} ${CLASS_NAME[h.cls].split(" ")[0]}</span>`;
+      b.title = `${h.name}｜HP ${h.maxHp}｜攻 ${h.atk}｜速 ${h.spd}｜暴 ${h.crit}%｜甲 ${Math.round(h.armor * 100)}%`;
+      b.onclick = () => {
+        const k = picked.indexOf(id);
+        if (k >= 0) picked.splice(k, 1);
+        else if (picked.length < 3) picked.push(id);
+        renumber();
+      };
+      grid.appendChild(b);
+    });
+    $("tsRandom").onclick = () => { picked = randomIds(3); renumber(); };
+    startB.onclick = () => { if (picked.length === 3) { $("teamSelect").hidden = true; res(picked.slice()); } };
+    renumber();
+    $("teamSelect").hidden = false;
+  });
+}
+
 // ---------- boot ----------
 async function start() {
-  const [allyId, foeId] = randomIds(2);   // random matchup from the 25-hero roster
-  state.ally = makeUnit(allyId);
-  state.foe = makeUnit(foeId);
-  paintUnit("ally"); paintUnit("foe");
   bindMenu(); bindKeys(); closeMenus();
+  // ?team=guan_yu,zhang_fei,zhou_yu 直接開戰（分享陣容／測試用）
+  const qs = (location.search.match(/[?&]team=([^&]+)/) || [])[1];
+  let ids = qs ? decodeURIComponent(qs).split(",").filter(id => HERO_DB[id]).slice(0, 3) : null;
+  if (!ids || ids.length !== 3) ids = await showTeamSelect();
+  state.allyTeam = ids.map(makeUnit); state.allyIdx = 0; state.ally = state.allyTeam[0];
+  // 敵隊：從剩餘 22 名隨機抽 3（不與玩家重複）
+  const pool = ROSTER.filter(id => !ids.includes(id));
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  state.foeTeam = pool.slice(0, 3).map(makeUnit); state.foeIdx = 0; state.foe = state.foeTeam[0];
   state.combo = 0; updateCombo();
+  paintUnit("ally"); paintUnit("foe"); paintPips();
   // static UI: 資訊框不滑入，只有角色進場
   $("foeSprite").classList.add("enter-foe");
   $("allySprite").classList.add("enter-ally");

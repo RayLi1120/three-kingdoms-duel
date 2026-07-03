@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 <div class="wrap">
@@ -28,11 +28,17 @@
         <div class="info-row">
           <span class="nm" id="foeName">周瑜</span>
           <span class="cls" id="foeCls">謀</span>
+          <span class="match-hint" id="matchHint" title="剋制關係">—</span>
           <span class="lv pixel">Lv<span id="foeLv">42</span></span>
+          <div class="pips" id="foePips"><i></i><i></i><i></i></div>
         </div>
         <div class="hp-row">
           <span class="hp-tag pixel">HP</span>
           <div class="hp-track"><div class="hp-fill" id="foeHp"></div></div>
+        </div>
+        <div class="en-row">
+          <span class="en-tag pixel">戰意</span>
+          <div class="en-track"><div class="en-fill" id="foeEn"></div></div>
         </div>
         <div class="bk-row">
           <span class="bk-tag pixel">架勢</span>
@@ -46,6 +52,7 @@
           <span class="nm" id="allyName">關羽</span>
           <span class="cls" id="allyCls">猛</span>
           <span class="lv pixel">Lv<span id="allyLv">42</span></span>
+          <div class="pips" id="allyPips"><i></i><i></i><i></i></div>
         </div>
         <div class="hp-row">
           <span class="hp-tag pixel">HP</span>
@@ -77,6 +84,9 @@
 
       <!-- skill list (hidden until FIGHT) -->
       <div class="skills" id="skillMenu" hidden></div>
+
+      <!-- party / swap list (hidden until 換將 or forced pick) -->
+      <div class="skills" id="partyMenu" hidden></div>
     </div>
 
     <!-- 連擊 perfect-streak counter -->
@@ -84,11 +94,23 @@
 
     <!-- floating damage numbers layer -->
     <div class="fx-layer" id="fxLayer"></div>
+
+    <!-- team select overlay (shown before battle) -->
+    <div class="team-select" id="teamSelect" hidden>
+      <div class="ts-panel">
+        <h2 class="ts-title">選擇出戰隊伍（3 名）</h2>
+        <div class="ts-grid" id="tsGrid"></div>
+        <div class="ts-actions">
+          <button class="ts-btn" id="tsRandom">隨機隊伍</button>
+          <button class="ts-btn primary" id="tsStart" disabled>開戰！</button>
+        </div>
+      </div>
+    </div>
   </div>
-  <p class="hint">硬派模式：光圈（點擊/空白鍵）・混合連按（按鍵＋點擊場上瞄準點）・蓄力（按住、重合瞬間放開）・終結技＝四連瞄準光圈（必須用滑鼠點中）。失手＝傷害大減且不蓄戰意；連續完美疊加連擊傷害；敵方越快格擋窗口越窄。鍵盤：1–4 選招、Esc 返回。</p>
+  <p class="hint">3v3 隊伍戰：擊倒敵方全隊獲勝，換將要消耗行動（被鎖定時不能換）。硬派輸入：光圈（點擊/空白鍵）・混合連按（按鍵＋瞄準點）・蓄力（按住再放開）・終結技四連瞄準光圈（滑鼠點中）。失手＝傷害大減且不蓄戰意；連續完美疊連擊；敵越快格擋窗越窄。鍵盤：1–4 選招、Esc 返回。</p>
 </div>
 
 <script src="js/model.js?v=3"></script>
-<script src="js/battle.js?v=8"></script>
+<script src="js/battle.js?v=10"></script>
 </body>
 </html>

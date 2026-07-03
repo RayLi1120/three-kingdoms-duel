@@ -254,6 +254,56 @@ body {
   pointer-events: none; z-index: 5;
 }
 
+/* team pips: 3 dots per side — active / alive / dead */
+.pips { display: flex; gap: 0.7cqw; margin-left: 1.2cqw; }
+.pips i { width: 1.9cqw; height: 1.9cqw; border-radius: 50%; border: 0.35cqw solid var(--frame); background: #b8c0b8; }
+.pips i.active { background: #5cd05c; }
+.pips i.alive  { background: #f0eecf; }
+.pips i.dead   { background: #4a4a52; }
+
+/* 剋制 matchup hint next to the foe's class chip: ▲ you counter / ▼ countered / — neutral */
+.match-hint { font-size: 3cqw; font-weight: 700; line-height: 1; }
+
+/* ---------- team select (static overlay) ---------- */
+.team-select { position: absolute; inset: 0; z-index: 10; background: rgba(20,24,34,.55); }
+.ts-panel {
+  position: absolute; inset: 3cqw; background: var(--cream);
+  border: 0.6cqw solid var(--frame); border-radius: 2cqw;
+  padding: 2cqw 3cqw; display: flex; flex-direction: column; gap: 1.6cqw;
+}
+.ts-title { font-size: 3.6cqw; color: var(--ink); text-align: center; }
+.ts-grid {
+  flex: 1; display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 1cqw; overflow-y: auto; align-content: start;
+}
+.ts-chip {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.5cqw; padding: 0.8cqw 0.4cqw; cursor: pointer; font-family: inherit;
+  background: #fff; border: 0.45cqw solid #b9b9a6; border-radius: 1.4cqw;
+}
+.ts-chip:hover { border-color: var(--frame); }
+.ts-chip.sel { border-color: #e0a030; background: #fffbe0; }
+.ts-badge {
+  width: 6cqw; height: 6cqw; border-radius: 50%; color: #fff; font-weight: 700; font-size: 3.2cqw;
+  display: flex; align-items: center; justify-content: center;
+  border: 0.4cqw solid rgba(255,255,255,.85); text-shadow: 0 0.25cqw 0 rgba(0,0,0,.3);
+}
+.ts-nm { font-size: 1.9cqw; font-weight: 700; color: var(--ink); }
+.ts-cls { font-size: 1.6cqw; font-weight: 700; }
+.ts-n {
+  position: absolute; top: 0.4cqw; right: 0.6cqw; width: 2.6cqw; height: 2.6cqw; border-radius: 50%;
+  background: #e0a030; color: #fff; font-size: 1.7cqw; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.ts-actions { display: flex; justify-content: center; gap: 2cqw; }
+.ts-btn {
+  font-family: inherit; font-size: 2.6cqw; font-weight: 700; cursor: pointer;
+  padding: 1cqw 4cqw; border-radius: 1.6cqw;
+  background: var(--cream); color: var(--ink); border: 0.5cqw solid var(--frame);
+}
+.ts-btn.primary { background: #e8513f; border-color: #b03325; color: #fff; }
+.ts-btn:disabled { opacity: .45; cursor: default; }
+
 /* impact flash on perfects (no screen movement) */
 .flash { position: absolute; inset: 0; background: #fff; opacity: .7; pointer-events: none; animation: flashOut .2s ease-out forwards; }
 @keyframes flashOut { to { opacity: 0; } }

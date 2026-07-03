@@ -8,6 +8,13 @@ turns. UI mimics the Pokémon FireRed/LeafGreen battle screen.
 **▶ Play:** https://rayli1120.github.io/three-kingdoms-duel/
 
 ## How to play
+- **3v3 team battles**: pick a team of 3 from the 25-hero roster (or 隨機隊伍 for a random
+  team; `?team=guan_yu,zhang_fei,zhou_yu` in the URL to share a lineup). KO the enemy's
+  whole team to win.
+- **換將 (SWAP)** costs your action — the foe hits your incoming hero for free. When your
+  hero falls, the replacement pick is free. 鎖定 (lock) prevents swapping. Watch the
+  3 team pips and the foe's 戰意 bar (a full bar means an ultimate is coming); the
+  ▲/▼ hint shows the class matchup.
 - Pick a skill from the **技能 (FIGHT)** menu each turn; both sides resolve in speed order.
 - Slot 1 is free, slots 2–3 have cooldowns, slot 4 is an ultimate gated by the 戰意 gauge.
 - **Timed hits (hard mode)** — every skill has its own input pattern
