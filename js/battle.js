@@ -7,7 +7,8 @@ const wait = ms => new Promise(r => setTimeout(r, FAST ? Math.min(ms, 40) : ms))
 const rand = p => Math.random() < p;
 
 // 3v3 隊伍戰：ally/foe 指向出戰中的武將；Team 陣列存整隊
-const state = { allyTeam: [], foeTeam: [], allyIdx: 0, foeIdx: 0, ally: null, foe: null, busy: true, over: false, combo: 0 };
+const state = { allyTeam: [], foeTeam: [], allyIdx: 0, foeIdx: 0, ally: null, foe: null, busy: true, over: false, combo: 0,
+  stats: { turns: 0, perfect: 0, good: 0, miss: 0, dealt: 0, taken: 0, earned: 0 } };   // 戰報
 
 // ---------- 銅錢與道具（localStorage 存檔）----------
 // 擊倒敵將 +250、我將陣亡 +100（安慰獎）、勝利 +500、敗北 +150
@@ -16,8 +17,41 @@ const SAVE_KEY = "sgdy_save";
 const save = Object.assign({ money: 300, items: {} },
   (() => { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch { return {}; } })());
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch {} }
-function addMoney(n) { save.money += n; persist(); paintMoney(); }
+function addMoney(n) { save.money += n; persist(); paintMoney(); if (state.stats) state.stats.earned += n; sfx("coin"); }
 function paintMoney() { const el = $("tsMoney"); if (el) el.textContent = `銅錢 ${save.money}`; }
+
+// ---------- sound（WebAudio 合成，無音檔；M 鍵靜音，記憶在存檔）----------
+let audioCtx = null;
+function sfx(kind) {
+  if (save.muted) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t = audioCtx.currentTime;
+    const tone = (freq, dur, type = "square", gain = 0.04, when = 0, slide = 0) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t + when);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + when + dur);
+      g.gain.setValueAtTime(gain, t + when);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + when + dur);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t + when); o.stop(t + when + dur + 0.02);
+    };
+    switch (kind) {
+      case "hit":     tone(160, 0.12, "sawtooth", 0.05, 0, -80); break;
+      case "crit":    tone(120, 0.18, "sawtooth", 0.07, 0, -60); tone(1200, 0.08, "square", 0.03, 0.02); break;
+      case "perfect": tone(880, 0.07, "square", 0.045); tone(1320, 0.09, "square", 0.045, 0.07); break;
+      case "miss":    tone(220, 0.15, "triangle", 0.04, 0, -120); break;
+      case "parry":   tone(1568, 0.05, "square", 0.05); tone(2093, 0.1, "square", 0.04, 0.05); break;
+      case "heal":    tone(523, 0.09, "sine", 0.05); tone(784, 0.12, "sine", 0.05, 0.09); break;
+      case "stagger": tone(90, 0.3, "sawtooth", 0.08, 0, -40); break;
+      case "faint":   tone(330, 0.4, "triangle", 0.05, 0, -260); break;
+      case "win":     [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.14, "square", 0.05, i * 0.13)); break;
+      case "lose":    [392, 330, 262].forEach((f, i) => tone(f, 0.2, "triangle", 0.05, i * 0.18)); break;
+      case "coin":    tone(988, 0.05, "square", 0.035); tone(1319, 0.1, "square", 0.035, 0.05); break;
+    }
+  } catch {}
+}
 // debug/verification hooks: DUEL.forceQte = 'perfect'|'good'|'miss' resolves QTEs instantly
 const DUEL = window.DUEL = { state, save, forceQte: null };
 
@@ -132,6 +166,7 @@ async function hit(side, big) {
   const sp = $(`${side}Sprite`);
   replay(sp, "hit");
   impact(side, big);          // static UI: 不震螢幕，大招回饋交給 flash/impact
+  sfx(big ? "crit" : "hit");
   await wait(420);
   sp.classList.remove("hit");
 }
@@ -346,6 +381,8 @@ const VERDICT_TXT = {
   parry:  { perfect: ["完美格擋！", "#ffd23f"], good: ["格擋！", "#9fe08a"], miss: ["破防！", "#ff8a70"] },
 };
 function verdict(side, kind, q) {
+  state.stats[q]++;                                        // 戰報：玩家時機統計
+  sfx(q === "perfect" ? (kind === "parry" ? "parry" : "perfect") : q === "miss" ? "miss" : "");
   const [txt, color] = VERDICT_TXT[kind][q];
   const { cx, cy } = spriteCenter(side);
   const n = document.createElement("div");
@@ -377,7 +414,7 @@ function computeDamage(att, def, sk) {
   m *= (sk.fx === "pierce") ? 1 : (1 - def.armor);
   // dodge: chance to greatly reduce
   let dodged = false;
-  if (def.statuses.dodge && rand(0.75)) { m *= 0.25; dodged = true; }
+  if (def.statuses.dodge && rand(0.5)) { m *= 0.25; dodged = true; }   // 平衡版：75%→50%
   let dmg = Math.round(base * m);
   if (sk.fx === "rend") dmg += Math.round(def.hp * 0.25);   // 撕裂: % current hp
   return { dmg, crit, tri: triMult(att.cls, def.cls), dodged };
@@ -411,7 +448,7 @@ async function addBreak(side, n) {
   if (u.break >= 100) {
     // stun=2：若目標本回合已行動，撐過同回合 upkeep 的遞減，下回合必定跳過（act 消耗時整個刪除）
     u.break = 0; u.statuses.stun = 2; u.statuses.vulnerable = 2;
-    replay($(`${side}Sprite`), "hit"); flash();
+    replay($(`${side}Sprite`), "hit"); flash(); sfx("stagger");
     paintUnit(side);
     await say(`${u.name} 架勢崩潰，露出破綻！`, 550);
   }
@@ -438,7 +475,7 @@ async function act(attSide, sk) {
     else if (sk.fx === "shield") { att.statuses.shield = 2; await say(`${att.name} 豎起護盾，並嘲諷敵方！`, 500); }
     else if (sk.fx === "dodge") { att.statuses.dodge = 2; await say(`${att.name} 身形飄忽，難以捉摸！`, 500); }
     else if (sk.fx === "rage") { att.hp = Math.round(att.hp * 0.85); att.statuses.atkup = 3; att.statuses.speed = 2; await say(`${att.name} 以苦肉換取爆發！`, 500); }
-    else if (sk.fx === "heal") { const h = Math.round(att.maxHp * 0.35); att.hp = Math.min(att.maxHp, att.hp + h); for (const k of ["burn","bleed","slow","distract","vulnerable","stun"]) delete att.statuses[k]; floatDmg(attSide, h, "heal"); await say(`${att.name} 回復了體力並淨化！`, 500); }
+    else if (sk.fx === "heal") { const h = Math.round(att.maxHp * 0.22); att.hp = Math.min(att.maxHp, att.hp + h); for (const k of ["burn","bleed","slow","distract","vulnerable","stun"]) delete att.statuses[k]; floatDmg(attSide, h, "heal"); sfx("heal"); await say(`${att.name} 回復了體力並淨化！`, 500); }   // 平衡版：35%→22%
     paintUnit(attSide);
     return;
   }
@@ -474,6 +511,7 @@ async function act(attSide, sk) {
     flash();
     const c = Math.round(def.atk * 0.35);
     att.hp = Math.max(0, att.hp - c);
+    state.stats.dealt += c;
     def.energy = Math.min(def.energyMax, def.energy + 20);
     replay($("allySprite"), "lunge-ally");
     floatDmg("foe", c, "crit");
@@ -487,6 +525,7 @@ async function act(attSide, sk) {
   }
 
   def.hp = Math.max(0, def.hp - r.dmg);
+  state.stats[attSide === "ally" ? "dealt" : "taken"] += r.dmg;
   floatDmg(defSide, r.dmg, r.crit ? "crit" : "");
   paintUnit(defSide); paintUnit(attSide);
   applyOnHit(att, def, sk);
@@ -502,7 +541,7 @@ async function upkeep(side) {
   const u = side === "ally" ? state.ally : state.foe;
   for (const dot of ["burn", "bleed"]) {
     if (u.statuses[dot] && u.hp > 0) {
-      const d = Math.round(u.maxHp * 0.06);
+      const d = Math.round(u.maxHp * 0.05);   // 平衡版：6%→5%
       u.hp = Math.max(0, u.hp - d);
       floatDmg(side, d, ""); paintUnit(side);
       await say(`${u.name} 受到${dot === "burn" ? "灼燒" : "流血"}傷害！`, 500);
@@ -518,11 +557,28 @@ function aiPick(u) {
   const usable = u.skills.map((s, i) => ({ s, i }))
     .filter(({ s, i }) => u.cd[i] === 0 && (s.type !== "ult" || u.energy >= u.energyMax));
   const ult = usable.find(x => x.s.type === "ult");
-  if (ult) return ult;
+  if (ult) {
+    // 治療終結技留到真的受傷（<65% 或身上有持續傷害）再用，不再滿血浪費
+    if (ult.s.fx === "heal") { if (u.hp < u.maxHp * 0.65 || u.statuses.burn || u.statuses.bleed) return ult; }
+    else return ult;
+  }
   const atks = usable.filter(x => x.s.type === "atk").sort((a, b) => b.s.power - a.s.power);
   const buff = usable.find(x => x.s.type === "buff");
   if (buff && !hasAnyBuff(u) && rand(0.4)) return buff;
-  return atks[0] || usable[0];
+  return atks[0] || buff || usable[0];
+}
+
+// AI 整體決策：被剋制、瀕危且板凳有合適人選時會主動換將（70% 執行，留點人味）
+function aiDecide() {
+  const foe = state.foe;
+  const bench = aliveBench(state.foeTeam, state.foeIdx);
+  if (bench.length && !foe.statuses.lock && foe.hp < foe.maxHp * 0.4 &&
+      triMult(state.ally.cls, foe.cls) > 1 && rand(0.7)) {
+    const better = bench.find(x => triMult(state.ally.cls, x.u.cls) <= 1);
+    if (better) return { type: "swap", to: better.i };
+  }
+  const fp = aiPick(foe);
+  return { type: "skill", fp };
 }
 function hasAnyBuff(u) { return u.statuses.atkup || u.statuses.shield || u.statuses.dodge; }
 
@@ -548,7 +604,7 @@ async function useItem(id) {
   save.items[id]--; if (save.items[id] <= 0) delete save.items[id];
   persist();
   await say(`使用了 ${it.name}！`, 300);
-  if (it.fx === "heal") { const h = Math.round(u.maxHp * 0.35); u.hp = Math.min(u.maxHp, u.hp + h); floatDmg("ally", h, "heal"); await say(`${u.name} 回復了體力！`, 450); }
+  if (it.fx === "heal") { const h = Math.round(u.maxHp * 0.35); u.hp = Math.min(u.maxHp, u.hp + h); floatDmg("ally", h, "heal"); sfx("heal"); await say(`${u.name} 回復了體力！`, 450); }
   else if (it.fx === "cleanse") { for (const k of ["burn", "bleed", "slow", "distract", "vulnerable", "stun", "lock"]) delete u.statuses[k]; await say(`${u.name} 的負面狀態一掃而空！`, 450); }
   else if (it.fx === "energy") { u.energy = Math.min(u.energyMax, u.energy + 50); await say(`${u.name} 戰意高漲！`, 450); }
   else if (it.fx === "shield") { u.statuses.shield = 2; await say(`${u.name} 豎起護盾！`, 450); }
@@ -557,9 +613,12 @@ async function useItem(id) {
 
 async function endBattle(win) {
   state.over = true; state.busy = true;
+  sfx(win ? "win" : "lose");
   const bonus = win ? PAY.win : PAY.lose;
   addMoney(bonus);
   await say(win ? `敵方全軍覆沒——你贏了！獲得 ${bonus} 銅錢` : `我方全軍覆沒——你輸了…獲得 ${bonus} 銅錢`, 600);
+  const st = state.stats;
+  await say(`戰報：${st.turns} 回合｜完美 ${st.perfect}・不錯 ${st.good}・失手 ${st.miss}｜輸出 ${st.dealt}・承受 ${st.taken}｜進帳 ${st.earned} 銅錢`, 1400);
   await say(`目前共有 ${save.money} 銅錢。　▶ 點擊任意處再戰`);
   $("stage").addEventListener("click", () => location.reload(), { once: true });
   return true;
@@ -570,28 +629,38 @@ async function endBattle(win) {
 async function takeTurn(action) {
   if (state.busy || state.over) return;
   state.busy = true; closeMenus();
-  const fp = aiPick(state.foe); state.foe.cd[fp.i] = fp.s.cd;
+  const ai = aiDecide();
+  if (ai.type === "skill") state.foe.cd[ai.fp.i] = ai.fp.s.cd;
+
+  // 敵方的行動：出招，或把行動花在換將上
+  const foeAct = async () => {
+    if (state.foe.hp <= 0) return false;
+    if (ai.type === "swap") { await say("對手鳴金換將！", 300); await swapIn("foe", ai.to); return false; }
+    await act("foe", ai.fp.s);
+    await wait(180);
+    return await checkFaint();
+  };
 
   if (action.type === "swap") {
     await say(`回來吧，${state.ally.name}！`, 300);
     await swapIn("ally", action.to);
-    if (state.foe.hp > 0) {
-      await act("foe", fp.s);
-      await wait(180);
-      if (await checkFaint()) return;
-    }
+    if (await foeAct()) return;
   } else if (action.type === "item") {
     await useItem(action.id);            // 用道具＝消耗行動，敵方照打
-    if (state.foe.hp > 0) {
-      await act("foe", fp.s);
-      await wait(180);
-      if (await checkFaint()) return;
-    }
+    if (await foeAct()) return;
+  } else if (ai.type === "swap") {
+    // 敵方換將＝它的行動；我方照常出招
+    await say("對手鳴金換將！", 300);
+    await swapIn("foe", ai.to);
+    await act("ally", state.ally.skills[action.idx]);
+    state.ally.cd[action.idx] = state.ally.skills[action.idx].cd;
+    await wait(180);
+    if (await checkFaint()) return;
   } else {
     state.ally.cd[action.idx] = state.ally.skills[action.idx].cd;
     // who: 綁定選招的武將——若中途倒下被替補，替補者不繼承亡者的行動
     const pAction = { side: "ally", sk: state.ally.skills[action.idx], who: state.ally };
-    const eAction = { side: "foe", sk: fp.s, who: state.foe };
+    const eAction = { side: "foe", sk: ai.fp.s, who: state.foe };
     const order = effSpeed(state.ally) >= effSpeed(state.foe) ? [pAction, eAction] : [eAction, pAction];
     for (const a of order) {
       if (state.ally.hp <= 0 || state.foe.hp <= 0) break;
@@ -601,6 +670,7 @@ async function takeTurn(action) {
       if (await checkFaint()) return;
     }
   }
+  state.stats.turns++;
   await upkeep("ally"); await upkeep("foe");
   if (await checkFaint()) return;
   paintUnit("ally"); paintUnit("foe");
@@ -614,7 +684,7 @@ async function checkFaint() {
   if (state.foe.hp <= 0 && !state.foe._fainted) {
     state.foe._fainted = true;
     $("foeSprite").classList.add("faint");
-    paintPips();
+    paintPips(); sfx("faint");
     addMoney(PAY.foeKO);
     await say(`${state.foe.name} 倒下了！獲得 ${PAY.foeKO} 銅錢`, 700);
     const bench = aliveBench(state.foeTeam, state.foeIdx);
@@ -625,7 +695,7 @@ async function checkFaint() {
   if (state.ally.hp <= 0 && !state.ally._fainted) {
     state.ally._fainted = true;
     $("allySprite").classList.add("faint");
-    paintPips();
+    paintPips(); sfx("faint");
     addMoney(PAY.allyKO);
     await say(`${state.ally.name} 倒下了！獲得撫恤 ${PAY.allyKO} 銅錢`, 700);
     const bench = aliveBench(state.allyTeam, state.allyIdx);
@@ -727,6 +797,11 @@ function bindMenu() {
 // keyboard: 1–4 選單/招式、Esc 返回（QTE 的空白鍵有自己的監聽，只在 busy 時生效）
 function bindKeys() {
   document.addEventListener("keydown", e => {
+    if (e.key === "m" || e.key === "M") {                  // 靜音切換（隨時可按，記憶在存檔）
+      save.muted = !save.muted; persist();
+      say(save.muted ? "音效已關閉（按 M 開啟）" : "音效已開啟（按 M 關閉）");
+      return;
+    }
     const pm = $("partyMenu");
     if (!pm.hidden) {          // 換將選單（含強制選人，busy 時也要能用）
       if (e.key >= "1" && e.key <= "3") { const b = pm.children[+e.key - 1]; if (b && !b.classList.contains("disabled")) b.click(); }
@@ -837,6 +912,7 @@ async function start() {
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   state.foeTeam = pool.slice(0, 3).map(makeUnit); state.foeIdx = 0; state.foe = state.foeTeam[0];
   state.combo = 0; updateCombo();
+  state.stats = { turns: 0, perfect: 0, good: 0, miss: 0, dealt: 0, taken: 0, earned: 0 };
   paintUnit("ally"); paintUnit("foe"); paintPips();
   // static UI: 資訊框不滑入，只有角色進場
   $("foeSprite").classList.add("enter-foe");

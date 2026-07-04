@@ -38,6 +38,14 @@ turns. UI mimics the Pokémon FireRed/LeafGreen battle screen.
 - **架勢 Break**: clean hits build the foe's break gauge (sloppy defense builds yours);
   at 100 the unit **staggers** — stunned + vulnerable.
 - Class counter-triangle: 猛 › 守 › 謀 › 猛 (奇 is a wildcard). Beating your counter deals ×1.25.
+- **Balance patch**: all 25 heroes tuned via 120k simulated battles — win rates now within
+  43–61% (was 18–93%). Buffs can no longer be kept up permanently (cd 4), dodge is 50%,
+  heals 22%, DoT 5%, burst ultimates hit much harder (2.5–2.7×).
+- **Smarter AI**: holds its healing ultimate until actually hurt, and retreats a wounded,
+  countered hero for a better matchup (swap costs its action, same rule as you).
+- **Sound** (WebAudio, no files): hits, crits, perfect chimes, parry rings, stagger crash,
+  win/lose jingles, coin clinks. Press **M** to mute.
+- **戰報 battle report** at the end: turns, perfect/good/miss counts, damage dealt/taken, money earned.
 - Keyboard: **1–4** menus/skills, **Esc** back, **Space/Enter/J** for timing.
 - Reload for a fresh random matchup from the 25-hero roster.
 
