@@ -49,7 +49,7 @@ turns. UI mimics the Pokémon FireRed/LeafGreen battle screen.
   win/lose jingles, coin clinks. Press **M** to mute.
 - **戰報 battle report** at the end: turns, perfect/good/miss counts, damage dealt/taken, money earned.
 - Keyboard: **1–4** menus/skills, **Esc** back, **Space/Enter/J** for timing.
-- Reload for a fresh random matchup from the 25-hero roster.
+- The foe's team of 3 is drawn from the heroes you didn't pick — every battle is a fresh matchup.
 
 ## Run locally
 It's a static site — no build step. From this folder:
@@ -59,5 +59,3 @@ python3 -m http.server 8451
 ```
 
 then open http://localhost:8451/ .
-
-*Placeholder emblem-badge sprites for now; real character art comes later.*
