@@ -62,7 +62,10 @@ function paintUnit(side) {
   $(`${side}Lv`).textContent = u.lv;
   const cls = $(`${side}Cls`); cls.textContent = u.cls; cls.style.background = CLASS_COLOR[u.cls];
   $(`${side}Emblem`).textContent = u.emblem;
-  const sp = $(`${side}Sprite`).querySelector(".sprite-body"); sp.style.background = CLASS_COLOR[u.cls];
+  const sp = $(`${side}Sprite`).querySelector(".sprite-body");
+  sp.style.backgroundColor = CLASS_COLOR[u.cls];
+  sp.style.borderColor = CLASS_COLOR[u.cls];                                    // 職業色環
+  sp.style.backgroundImage = `url(img/${u.id}${side === "ally" ? "_b" : ""}.png)`;   // _b＝我方鏡像立繪
   const pct = Math.max(0, u.hp / u.maxHp * 100);
   const hp = $(`${side}Hp`); hp.style.width = pct + "%";
   hp.style.background = pct > 50 ? "var(--hp-green)" : pct > 20 ? "var(--hp-amber)" : "var(--hp-red)";
@@ -881,7 +884,7 @@ function showTeamSelect() {
       const h = HERO_DB[id];
       const b = document.createElement("button");
       b.className = "ts-chip"; b.dataset.id = id;
-      b.innerHTML = `<span class="ts-badge" style="background:${CLASS_COLOR[h.cls]}">${h.emblem}</span>` +
+      b.innerHTML = `<span class="ts-badge" style="background-color:${CLASS_COLOR[h.cls]};border-color:${CLASS_COLOR[h.cls]};background-image:url(img/${id}.png)"></span>` +
         `<span class="ts-nm">${h.name}</span><span class="ts-cls" style="color:${CLASS_COLOR[h.cls]}">${h.cls} ${CLASS_NAME[h.cls].split(" ")[0]}</span>`;
       b.title = `${h.name}｜HP ${h.maxHp}｜攻 ${h.atk}｜速 ${h.spd}｜暴 ${h.crit}%｜甲 ${Math.round(h.armor * 100)}%`;
       b.onclick = () => {

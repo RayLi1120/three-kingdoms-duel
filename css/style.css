@@ -51,13 +51,15 @@ body {
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%; border: 0.6cqw solid rgba(255,255,255,.85);
   box-shadow: 0 0.8cqw 1.6cqw rgba(0,0,0,.25), inset 0 0 2cqw rgba(255,255,255,.3);
-  animation: idleAlly 2.6s ease-in-out infinite;
+  /* 像素立繪：兩格呼吸幀（sheet 128×64），pixFrames 逐格切換 + 平滑浮動 */
+  image-rendering: pixelated;
+  background-size: 200% 100%; background-position: 0 0;
+  animation: idleAlly 2.6s ease-in-out infinite, pixFrames 0.9s steps(1, end) infinite;
   will-change: transform;
 }
-.sprite-foe .sprite-body { animation: idleFoe 3s ease-in-out infinite; }
-.sprite .emblem { color: #fff; font-weight: 700; text-shadow: 0 0.3cqw 0 rgba(0,0,0,.35); }
-.sprite-foe .emblem  { font-size: 9cqw; }
-.sprite-ally .emblem { font-size: 12cqw; }
+.sprite-foe .sprite-body { animation: idleFoe 3s ease-in-out infinite, pixFrames 1.1s steps(1, end) infinite; }
+@keyframes pixFrames { 0%, 49.9% { background-position-x: 0%; } 50%, 100% { background-position-x: 100%; } }
+.sprite .emblem { display: none; }   /* 全 8 名武將皆有像素立繪，徽章文字退役 */
 /* gentle hover/breathing while idle (ally floats a touch more than the far foe) */
 @keyframes idleAlly { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-1.6cqw) scale(1.025); } }
 @keyframes idleFoe  { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-1cqw) scale(1.02); } }
@@ -301,7 +303,7 @@ body {
 .shop-desc { font-size: 1.8cqw; color: #6a6a72; }
 .shop-price { font-size: 2cqw; font-weight: 700; color: #b07818; white-space: nowrap; }
 .ts-grid {
-  flex: 1; display: grid; grid-template-columns: repeat(5, 1fr);
+  flex: 1; display: grid; grid-template-columns: repeat(4, 1fr);   /* 8 武將＝4×2 */
   gap: 1cqw; overflow-y: auto; align-content: start;
 }
 .ts-chip {
@@ -312,9 +314,10 @@ body {
 .ts-chip:hover { border-color: var(--frame); }
 .ts-chip.sel { border-color: #e0a030; background: #fffbe0; }
 .ts-badge {
-  width: 6cqw; height: 6cqw; border-radius: 50%; color: #fff; font-weight: 700; font-size: 3.2cqw;
-  display: flex; align-items: center; justify-content: center;
-  border: 0.4cqw solid rgba(255,255,255,.85); text-shadow: 0 0.25cqw 0 rgba(0,0,0,.3);
+  width: 7cqw; height: 7cqw; border-radius: 50%;
+  border: 0.4cqw solid rgba(255,255,255,.85);
+  image-rendering: pixelated;
+  background-size: 200% 100%; background-position: 0 0;   /* sheet 第一幀 */
 }
 .ts-nm { font-size: 1.9cqw; font-weight: 700; color: var(--ink); }
 .ts-cls { font-size: 1.6cqw; font-weight: 700; }

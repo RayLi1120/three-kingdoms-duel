@@ -8,9 +8,13 @@ turns. UI mimics the Pokémon FireRed/LeafGreen battle screen.
 **▶ Play:** https://rayli1120.github.io/three-kingdoms-duel/
 
 ## How to play
-- **3v3 team battles**: pick a team of 3 from the 25-hero roster (or 隨機隊伍 for a random
-  team; `?team=guan_yu,zhang_fei,zhou_yu` in the URL to share a lineup). KO the enemy's
-  whole team to win.
+- **3v3 team battles**: pick a team of 3 from the roster of **8 heroes with pixel-art
+  sprites** — 關羽・呂布 (猛), 張飛・趙雲 (守), 周瑜・諸葛亮 (謀), 貂蟬・孫尚香 (奇) —
+  (or 隨機隊伍 for a random team; `?team=guan_yu,zhang_fei,zhou_yu` in the URL to share a
+  lineup). KO the enemy's whole team to win.
+- **Pixel sprites**: each hero has a 64×64, 24-color, 2-frame breathing sprite generated
+  from the original portraits; your side shows the mirrored view, and the class-colored
+  ring marks 猛/守/謀/奇.
 - **換將 (SWAP)** costs your action — the foe hits your incoming hero for free. When your
   hero falls, the replacement pick is free. 鎖定 (lock) prevents swapping. Watch the
   3 team pips and the foe's 戰意 bar (a full bar means an ultimate is coming); the

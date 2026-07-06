@@ -32,46 +32,6 @@ const HERO_DB = {
       { name: "轅門射戟", power: 2.1, cd: 0, type: "ult", fx: "rend",   desc: "撕裂 + 破綻（需戰意）" },
     ],
   },
-  ma_chao: {
-    name: "馬超", emblem: "馬", cls: "猛", lv: 42,
-    maxHp: 3250, atk: 152, spd: 116, crit: 22, armor: 0.09,
-    skills: [
-      { name: "銀月槍",   power: 1.0, cd: 0, type: "atk", fx: "bleed",  desc: "100% 傷害，可能流血" },
-      { name: "西涼鐵騎", power: 1.6, cd: 2, type: "atk", fx: "slow",   desc: "衝鋒 160% + 遲緩" },
-      { name: "獅盔耀世", power: 0,   cd: 4, type: "buff", fx: "atkup", desc: "自身攻擊+50%" },
-      { name: "錦馬超",   power: 2.5, cd: 0, type: "ult", fx: "nuke",   desc: "爆發 + 破綻（需戰意）" },
-    ],
-  },
-  xu_chu: {
-    name: "許褚", emblem: "褚", cls: "猛", lv: 42,
-    maxHp: 2880, atk: 138, spd: 86, crit: 16, armor: 0.10,
-    skills: [
-      { name: "裸衣鬥",   power: 1.0, cd: 0, type: "atk", fx: "bleed",  desc: "100% 傷害，可能流血" },
-      { name: "虎癡蠻力", power: 1.15, cd: 3, type: "atk", fx: "stun",  desc: "重擊，可能暈眩" },
-      { name: "虎衛親軍", power: 0,   cd: 4, type: "buff", fx: "shield", desc: "護盾 + 嘲諷" },
-      { name: "力拔山兮", power: 1.7, cd: 0, type: "ult", fx: "rend",   desc: "撕裂 + 破綻（需戰意）" },
-    ],
-  },
-  huang_zhong: {
-    name: "黃忠", emblem: "黃", cls: "猛", lv: 42,
-    maxHp: 3150, atk: 154, spd: 92, crit: 32, armor: 0.10,
-    skills: [
-      { name: "定軍弓",   power: 1.0, cd: 0, type: "atk", fx: "bleed",  desc: "100% 傷害，可能流血" },
-      { name: "百步穿楊", power: 1.6, cd: 2, type: "atk", fx: "pierce", desc: "穿透 160%，無視護盾" },
-      { name: "老當益壯", power: 0,   cd: 4, type: "buff", fx: "atkup", desc: "自身攻擊+50%" },
-      { name: "神射定軍", power: 2.5, cd: 0, type: "ult", fx: "nuke",   desc: "爆發 + 破綻（需戰意）" },
-    ],
-  },
-  sun_ce: {
-    name: "孫策", emblem: "策", cls: "猛", lv: 42,
-    maxHp: 3200, atk: 145, spd: 106, crit: 22, armor: 0.09,
-    skills: [
-      { name: "霸王槍",   power: 1.0, cd: 0, type: "atk", fx: "bleed",  desc: "100% 傷害，可能流血" },
-      { name: "江東猛虎", power: 1.5, cd: 2, type: "atk", fx: "pierce", desc: "破甲 150%，無視護盾" },
-      { name: "小霸王",   power: 0,   cd: 4, type: "buff", fx: "rage",  desc: "捨身換取攻擊+疾風" },
-      { name: "傳國玉璽", power: 2.0, cd: 0, type: "ult", fx: "rend",   desc: "撕裂 + 破綻（需戰意）" },
-    ],
-  },
 
   // ───────── 守 Resilient — 高血厚甲、控場護盾 ─────────
   zhang_fei: {
@@ -94,51 +54,11 @@ const HERO_DB = {
       { name: "單騎救主", power: 0,   cd: 0, type: "ult", fx: "heal",  desc: "治療 + 淨化（需戰意）" },
     ],
   },
-  xiahou_dun: {
-    name: "夏侯惇", emblem: "惇", cls: "守", lv: 42,
-    maxHp: 3500, atk: 130, spd: 80, crit: 12, armor: 0.17,
-    skills: [
-      { name: "矛盾交擊", power: 1.0, cd: 0, type: "atk", fx: "slow",   desc: "傷害 + 遲緩" },
-      { name: "拔矢啖睛", power: 1.5, cd: 2, type: "atk", fx: "pierce", desc: "破甲 150%，無視護盾" },
-      { name: "獨目悍將", power: 0,   cd: 4, type: "buff", fx: "atkup", desc: "自身攻擊+50%" },
-      { name: "烈魂衝陣", power: 1.9, cd: 0, type: "ult", fx: "rend",   desc: "撕裂 + 破綻（需戰意）" },
-    ],
-  },
-  cao_ren: {
-    name: "曹仁", emblem: "仁", cls: "守", lv: 42,
-    maxHp: 3400, atk: 116, spd: 74, crit: 10, armor: 0.18,
-    skills: [
-      { name: "鐵壁槍",   power: 1.0, cd: 0, type: "atk", fx: "slow",   desc: "傷害 + 遲緩" },
-      { name: "拒守樊城", power: 1.1, cd: 3, type: "atk", fx: "stun",   desc: "鎮守，可能暈眩" },
-      { name: "金城湯池", power: 0,   cd: 4, type: "buff", fx: "shield", desc: "護盾 + 嘲諷" },
-      { name: "將軍金甲", power: 0,   cd: 0, type: "ult", fx: "heal",   desc: "治療 + 淨化（需戰意）" },
-    ],
-  },
-  dian_wei: {
-    name: "典韋", emblem: "韋", cls: "守", lv: 42,
-    maxHp: 2900, atk: 124, spd: 82, crit: 14, armor: 0.12,
-    skills: [
-      { name: "雙鐵戟",   power: 1.0, cd: 0, type: "atk", fx: "bleed",  desc: "100% 傷害，可能流血" },
-      { name: "帳前飛戟", power: 1.1, cd: 3, type: "atk", fx: "stun",   desc: "飛戟，可能暈眩" },
-      { name: "古之惡來", power: 0,   cd: 4, type: "buff", fx: "shield", desc: "護盾 + 嘲諷" },
-      { name: "死戰不退", power: 1.9, cd: 0, type: "ult", fx: "rend",   desc: "撕裂 + 破綻（需戰意）" },
-    ],
-  },
-  huang_gai: {
-    name: "黃蓋", emblem: "蓋", cls: "守", lv: 42,
-    maxHp: 3150, atk: 120, spd: 80, crit: 12, armor: 0.16,
-    skills: [
-      { name: "鐵鞭",     power: 1.0, cd: 0, type: "atk", fx: "slow",   desc: "傷害 + 遲緩" },
-      { name: "火船突陣", power: 1.25, cd: 3, type: "atk", fx: "burn",  desc: "火攻 + 灼燒" },
-      { name: "受刑明志", power: 0,   cd: 4, type: "buff", fx: "shield", desc: "護盾 + 嘲諷" },
-      { name: "縱火焚船", power: 1.8, cd: 0, type: "ult", fx: "burn",   desc: "大範圍灼燒（需戰意）" },
-    ],
-  },
 
   // ───────── 謀 Cunning — 高攻速暴擊、狀態與爆發 ─────────
   zhou_yu: {
     name: "周瑜", emblem: "瑜", cls: "謀", lv: 42,
-    maxHp: 3000, atk: 162, spd: 112, crit: 15, armor: 0.05,
+    maxHp: 3100, atk: 162, spd: 112, crit: 15, armor: 0.05,   // 8 人版：墊底補血 3000→3100
     skills: [
       { name: "樂律",   power: 1.1, cd: 0, type: "atk", fx: "distract", desc: "傷害 + 擾亂" },
       { name: "苦肉計", power: 0,   cd: 3, type: "buff", fx: "rage",     desc: "獻血換取攻擊+疾風" },
@@ -156,56 +76,6 @@ const HERO_DB = {
       { name: "借東風", power: 2.6, cd: 0, type: "ult", fx: "nuke",     desc: "疾風 + 爆發（需戰意）" },
     ],
   },
-  sima_yi: {
-    name: "司馬懿", emblem: "懿", cls: "謀", lv: 42,
-    maxHp: 3050, atk: 164, spd: 104, crit: 16, armor: 0.08,
-    skills: [
-      { name: "鷹視狼顧", power: 1.0, cd: 0, type: "atk", fx: "distract", desc: "傷害 + 擾亂" },
-      { name: "堅壁拒戰", power: 1.4, cd: 2, type: "atk", fx: "lock",    desc: "鎖定 + 破綻" },
-      { name: "韜光養晦", power: 0,   cd: 3, type: "buff", fx: "dodge",  desc: "閃避 + 淨化" },
-      { name: "鷹揚河洛", power: 2.6, cd: 0, type: "ult", fx: "nuke",    desc: "爆發 + 破綻（需戰意）" },
-    ],
-  },
-  guo_jia: {
-    name: "郭嘉", emblem: "嘉", cls: "謀", lv: 42,
-    maxHp: 2800, atk: 166, spd: 114, crit: 18, armor: 0.05,
-    skills: [
-      { name: "鬼才",     power: 1.0, cd: 0, type: "atk", fx: "distract", desc: "傷害 + 擾亂" },
-      { name: "十勝十敗", power: 1.5, cd: 2, type: "atk", fx: "pierce",  desc: "洞察弱點 150%，無視護盾" },
-      { name: "遺計定遼", power: 0,   cd: 4, type: "buff", fx: "atkup",  desc: "自身攻擊+50%" },
-      { name: "天妒英才", power: 2.6, cd: 0, type: "ult", fx: "nuke",    desc: "爆發 + 破綻（需戰意）" },
-    ],
-  },
-  pang_tong: {
-    name: "龐統", emblem: "統", cls: "謀", lv: 42,
-    maxHp: 3050, atk: 168, spd: 100, crit: 16, armor: 0.08,
-    skills: [
-      { name: "鳳雛策",   power: 1.1, cd: 0, type: "atk", fx: "distract", desc: "傷害 + 擾亂" },
-      { name: "鐵索連環", power: 1.45, cd: 2, type: "atk", fx: "lock",   desc: "鎖定 + 破綻" },
-      { name: "醉理百事", power: 0,   cd: 4, type: "buff", fx: "atkup",  desc: "自身攻擊+50%" },
-      { name: "鳳雛驚世", power: 2.7, cd: 0, type: "ult", fx: "nuke",    desc: "爆發 + 破綻（需戰意）" },
-    ],
-  },
-  lu_xun: {
-    name: "陸遜", emblem: "遜", cls: "謀", lv: 42,
-    maxHp: 2480, atk: 140, spd: 108, crit: 16, armor: 0.06,
-    skills: [
-      { name: "儒將劍",   power: 1.0, cd: 0, type: "atk", fx: "distract", desc: "傷害 + 擾亂" },
-      { name: "火攻連營", power: 1.0, cd: 3, type: "atk", fx: "burn",    desc: "火攻 + 灼燒" },
-      { name: "後發制人", power: 0,   cd: 4, type: "buff", fx: "dodge",  desc: "閃避 + 淨化" },
-      { name: "火燒七百里", power: 2.0, cd: 0, type: "ult", fx: "burn",  desc: "大範圍灼燒（需戰意）" },
-    ],
-  },
-  jia_xu: {
-    name: "賈詡", emblem: "詡", cls: "謀", lv: 42,
-    maxHp: 2620, atk: 146, spd: 102, crit: 15, armor: 0.06,
-    skills: [
-      { name: "算無遺策", power: 1.0, cd: 0, type: "atk", fx: "distract", desc: "傷害 + 擾亂" },
-      { name: "亂武毒謀", power: 1.2, cd: 2, type: "atk", fx: "bleed",   desc: "毒傷，可能流血" },
-      { name: "明哲保身", power: 0,   cd: 4, type: "buff", fx: "atkup",  desc: "自身攻擊+50%" },
-      { name: "毒士之謀", power: 2.0, cd: 0, type: "ult", fx: "rend",    desc: "撕裂 + 破綻（需戰意）" },
-    ],
-  },
 
   // ───────── 奇 Wildcard — 無剋制邊、刺客與奇門 ─────────
   diao_chan: {
@@ -216,46 +86,6 @@ const HERO_DB = {
       { name: "連環美人", power: 1.4, cd: 2, type: "atk", fx: "lock",    desc: "鎖定 + 破綻" },
       { name: "傾國傾城", power: 0,   cd: 3, type: "buff", fx: "dodge",  desc: "閃避 + 淨化" },
       { name: "鳳儀亭",   power: 2.7, cd: 0, type: "ult", fx: "nuke",    desc: "爆發 + 破綻（需戰意）" },
-    ],
-  },
-  hua_tuo: {
-    name: "華佗", emblem: "華", cls: "奇", lv: 42,
-    maxHp: 2520, atk: 126, spd: 90, crit: 14, armor: 0.09,
-    skills: [
-      { name: "青囊刀",   power: 1.0, cd: 0, type: "atk", fx: "bleed",  desc: "100% 傷害，可能流血" },
-      { name: "麻沸散",   power: 1.2, cd: 2, type: "atk", fx: "stun",   desc: "麻醉，可能暈眩" },
-      { name: "五禽戲",   power: 0,   cd: 4, type: "buff", fx: "atkup", desc: "強身健體，攻擊+50%" },
-      { name: "青囊回春", power: 0,   cd: 0, type: "ult", fx: "heal",   desc: "治療 + 淨化（需戰意）" },
-    ],
-  },
-  zuo_ci: {
-    name: "左慈", emblem: "慈", cls: "奇", lv: 42,
-    maxHp: 2950, atk: 162, spd: 112, crit: 18, armor: 0.06,
-    skills: [
-      { name: "擲杯戲",   power: 1.0, cd: 0, type: "atk", fx: "distract", desc: "傷害 + 擾亂" },
-      { name: "神行符",   power: 1.5, cd: 2, type: "atk", fx: "slow",    desc: "符咒 + 遲緩" },
-      { name: "分身術",   power: 0,   cd: 3, type: "buff", fx: "dodge",  desc: "閃避 + 淨化" },
-      { name: "五嶽遁形", power: 2.6, cd: 0, type: "ult", fx: "nuke",    desc: "爆發 + 破綻（需戰意）" },
-    ],
-  },
-  gan_ning: {
-    name: "甘寧", emblem: "甘", cls: "奇", lv: 42,
-    maxHp: 2850, atk: 150, spd: 116, crit: 24, armor: 0.07,
-    skills: [
-      { name: "錦帆賊",   power: 1.0, cd: 0, type: "atk", fx: "bleed",  desc: "100% 傷害，可能流血" },
-      { name: "百騎劫營", power: 1.5, cd: 2, type: "atk", fx: "pierce", desc: "夜襲 150%，無視護盾" },
-      { name: "鈴聲奪魄", power: 0,   cd: 4, type: "buff", fx: "rage",  desc: "捨身換取攻擊+疾風" },
-      { name: "錦帆夜襲", power: 2.1, cd: 0, type: "ult", fx: "rend",   desc: "撕裂 + 破綻（需戰意）" },
-    ],
-  },
-  taishi_ci: {
-    name: "太史慈", emblem: "太", cls: "奇", lv: 42,
-    maxHp: 3150, atk: 152, spd: 108, crit: 22, armor: 0.08,
-    skills: [
-      { name: "神射手",   power: 1.0, cd: 0, type: "atk", fx: "bleed",  desc: "100% 傷害，可能流血" },
-      { name: "神亭酣鬥", power: 1.55, cd: 2, type: "atk", fx: "pierce", desc: "酣鬥 155%，無視護盾" },
-      { name: "信義篤烈", power: 0,   cd: 4, type: "buff", fx: "atkup", desc: "自身攻擊+50%" },
-      { name: "北海揚名", power: 2.5, cd: 0, type: "ult", fx: "nuke",   desc: "爆發 + 破綻（需戰意）" },
     ],
   },
   sun_shangxiang: {
